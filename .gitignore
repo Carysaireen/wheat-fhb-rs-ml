@@ -25,3 +25,7 @@ Feature_Correlation_Matrix_All.csv
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# 临时文件
+_manifest.json
+_text_files_dump.txt
