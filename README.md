@@ -106,6 +106,7 @@ pip install -r requirements.txt
 **注意事项（隐性契约，务必阅读）：**
 
 - 数据源文件为 **GBK 编码**（`data/raw/Wheat_Scab_Features_Extraction_Ordered_region.csv`），脚本已用 `encoding='gbk'` 读取，**请勿另存为 UTF-8**；
+- 出于隐私保护，数据中的**农户姓名已匿名化**（`O_Name` → `Plot_XXX`），**经纬度已模糊到 0.01 度**（约 1 km）；
 - 脚本通过 `Path(__file__).resolve().parents[1]` 定位仓库根目录，**必须在 `src/` 目录下运行**（`cd src` 后再执行）；
 - 部分脚本原本引用本地 `vendor/` `vendor_torch/` 目录（本项目打包的离线依赖），现已改为**优雅降级**：目录存在则优先使用，不存在则回退到系统安装的包。**仓库不包含 vendor 目录**（见 `.gitignore`），请正常 `pip install`。
 

@@ -1,0 +1,1533 @@
+@@@PATH@@@ .gitignore
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 本地依赖（不应上传）
+vendor/
+vendor_torch/
+
+# 工作目录与隐私
+.workbuddy/
+
+# 数据中间产物（原始数据保留，中间/临时文件排除）
+*.tmp
+nochange__*.csv
+*_Extracted.csv
+Feature_Correlation_Matrix_All.csv
+
+# 过程记录草稿（大文件，不纳入版本控制）
+*.docx
+*.doc
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+@@@END@@@
+@@@PATH@@@ arxiv精读_FHB_2409.00395.md
+[15:45:48] INFO    skills.loader — Loaded skill: agent_systems
+[15:45:48] INFO    skills.loader — Loaded skill: benchmark
+[15:45:48] INFO    skills.loader — Loaded skill: general
+[15:45:48] INFO    skills.loader — Loaded skill: inference_accelerate
+[15:45:48] INFO    skills.loader — Loaded skill: llm_training
+[15:45:48] INFO    skills.loader — Loaded skill: multimodal
+[15:45:48] INFO    skills.loader — Loaded skill: rag_and_retrieval
+[15:45:48] INFO    skills.loader — Loaded skill: technique_report
+[15:45:48] INFO    daily-arxiv — ============================================================
+[15:45:48] INFO    daily-arxiv — Single Paper Mode
+[15:45:48] INFO    daily-arxiv — ============================================================
+[15:45:48] INFO    skills.loader — Loaded skill: agent_systems
+[15:45:48] INFO    skills.loader — Loaded skill: benchmark
+[15:45:48] INFO    skills.loader — Loaded skill: general
+[15:45:48] INFO    skills.loader — Loaded skill: inference_accelerate
+[15:45:48] INFO    skills.loader — Loaded skill: llm_training
+[15:45:48] INFO    skills.loader — Loaded skill: multimodal
+[15:45:48] INFO    skills.loader — Loaded skill: rag_and_retrieval
+[15:45:48] INFO    skills.loader — Loaded skill: technique_report
+[15:45:48] INFO    daily-arxiv — Fetching paper: 2409.00395
+[15:45:48] INFO    arxiv_fetcher.fetcher — Fetching single paper: 2409.00395
+[15:45:50] INFO    arxiv_fetcher.fetcher —   Found: Self-supervised Fusarium Head Blight Detection with Hyperspe...
+[15:45:55] INFO    agents.classifier_agent —   [multimodal] (conf=0.75) Self-supervised Fusarium Head Blight Detection with Hyperspe...
+[15:45:55] INFO    daily-arxiv — Processing as category: multimodal
+[15:45:56] INFO    arxiv_fetcher.fetcher —   Fetching source via arxiv_to_prompt: 2409.00395
+2026-08-13 15:45:56,505 - INFO -   Fetching source via arxiv_to_prompt: 2409.00395
+2026-08-13 15:45:57,482 - INFO - Downloading source from https://arxiv.org/e-print/2409.00395
+2026-08-13 15:45:59,987 - INFO - Source files downloaded and extracted to C:\Users\Lenovo\AppData\Local\arxiv-to-prompt\2409.00395/
+[safe-delete][SAFE_DELETE_FAIL_CLOSED] {"target": "C:\\Users\\Lenovo\\AppData\\Local\\arxiv-to-prompt\\.staging\\2409.00395.h97_vxd_", "reason": "windows-sandbox-recycle-bin-unavailable"}
+2026-08-13 15:45:59,987 - WARNING - Failed to remove directory C:\Users\Lenovo\AppData\Local\arxiv-to-prompt\.staging\2409.00395.h97_vxd_: [safe-delete][SAFE_DELETE_FAIL_CLOSED] {"target": "C:\\Users\\Lenovo\\AppData\\Local\\arxiv-to-prompt\\.staging\\2409.00395.h97_vxd_", "reason": "windows-sandbox-recycle-bin-unavailable"}
+[safe-delete][SAFE_DELETE_FAIL_CLOSED] {"target": "C:\\Users\\Lenovo\\AppData\\Local\\arxiv-to-prompt\\.locks\\42b4b6d94a15d2cf511f2848fd1451c313eba377e1f41987b29d0cfad1eeb71c.lock", "reason": "windows-sandbox-recycle-bin-unavailable"}
+[15:46:00] INFO    agents.reader_agent —   [Pass 1] Self-supervised Fusarium Head Blight Detection with Hyperspe...
+2026-08-13 15:46:00,003 - INFO -   [Pass 1] Self-supervised Fusarium Head Blight Detection with Hyperspe...
+2026-08-13 15:46:00,176 - INFO - HTTP Request: POST https://api.deepseek.com/v1/chat/completions "HTTP/1.1 200 OK"
+[15:46:08] INFO    agents.reader_agent —   [Pass 2] Self-supervised Fusarium Head Blight Detection with Hyperspe...
+2026-08-13 15:46:08,656 - INFO -   [Pass 2] Self-supervised Fusarium Head Blight Detection with Hyperspe...
+2026-08-13 15:46:08,852 - INFO - HTTP Request: POST https://api.deepseek.com/v1/chat/completions "HTTP/1.1 200 OK"
+---
+title: "Self-supervised Fusarium Head Blight Detection with Hyperspectral Image and Feature Mining"
+arxiv_id: "2409.00395"
+authors: "Yu-Fan Lin, Ching-Heng Cheng, Bo-Cheng Qiu, Cheng-Jun Kang, Chia-Ming Lee"
+categories: "cs.CV, cs.LG"
+date_read: ""
+skill_category: ""
+pdf_url: "https://arxiv.org/pdf/2409.00395v1"
+---
+
+# Self-supervised Fusarium Head Blight Detection with Hyperspectral Image and Feature Mining
+
+> **ArXiv**: [2409.00395](https://arxiv.org/abs/2409.00395) | **Authors**: Yu-Fan Lin, Ching-Heng Cheng, Bo-Cheng Qiu, Cheng-Jun Kang, Chia-Ming Lee
+
+# 第二篇论文阅读笔记 — 基于端元提取与Top-K波段选择的自监督赤霉病检测
+
+> [!note]
+> **一句话总结**：本文提出一种**无需GPU和深度网络的自监督赤霉病（FHB）检测方法**，通过K-means聚类生成伪标签引导Top-K波段选择，将筛选出的判别性波段作为端元特征，配合LightGBM/SVM等轻量分类器实现轻度与重度赤霉病的高精度区分，在Beyond Visible Spectrum: AI for Agriculture Challenge 2024竞赛数据上达到近乎完美的验证准确率。
+
+---
+
+## 核心架构
+
+### 整体流程
+
+```
+输入HSI (101波段)
+    ↓
+[预处理] 归一化 + 光谱平均
+    ↓
+[伪标签生成] K-means聚类 (K=2, Elbow + Silhouette确定)
+    ↓
+[特征选择] Top-K波段选择（利用伪标签引导特征重要性挖掘）
+    ↓
+[特征表示] 选出的K个波段作为端元特征
+    ↓
+[分类] LightGBM / SVM（任意分类器均可）
+    ↓
+输出: mild-FHB / serious-FHB
+```
+
+### 各组件详解
+
+#### 1. 预处理模块
+- **归一化（Normalization）**：稳定训练和推理过程
+- **光谱平均（Spectral Averaging）**：降低数据复杂度，去除噪声和冗余
+- **设计动机**：FHB检测属于**粗粒度HSI分类**任务，无需保留细粒度特征
+
+#### 2. 伪标签生成（K-means聚类）
+- 利用归一化和光谱平均后的数据，K-means聚类效果显著提升
+- **K值确定**：结合**肘部法则（Elbow Method）**和**轮廓分析（Silhouette Analysis）**两种方法
+  - 肘部法则：绘制惯性（簇内平方和）随簇数变化的曲线，选取拐点
+  - 轮廓分析：衡量样本与自身簇的相似度与其他簇的对比，取最高得分
+  - **两种方法一致表明 K=2 为最优**（对应轻度/重度两类）
+
+#### 3. Top-K波段选择
+- **核心思想**：利用K-means生成的伪标签进行**特征重要性挖掘**
+- 选出Top-K个最具判别力的波段作为端元
+- **与传统端元提取的区别**：
+  - 传统方法：基于优化算法，涉及密集的数学计算（如VCA、N-FINDR）
+  - 本文方法：**直接提取判别性特征**，简化流程同时保持有效性
+
+#### 4. 分类器
+- **主分类器**：**LightGBM** — 擅长处理高维数据，效率高且鲁棒
+- **对比分类器**：**SVM** — 用于全面分析
+- **关键优势**：由于提取的特征鲁棒且紧凑，**分类器可以是任意的**
+
+---
+
+## 训练流程
+
+### 数据描述
+
+| 属性 | 详情 |
+|------|------|
+| 采集平台 | DJI M600 Pro UAV + S185快照式高光谱传感器 |
+| 光谱范围 | 450-950nm，光谱分辨率4nm |
+| 原始波段数 | 125波段 |
+| 有效波段数 | **101波段**（去除前10和后14个噪声波段） |
+| 飞行高度 | 60米，空间分辨率约4cm/像素 |
+| 图像尺寸 | 全色图1000×1000px，HSI 50×50px |
+| 训练数据划分 | 32×32块，带标签 |
+| 数据集规模 | 共1,696个HSI（1,006个轻度FHB + 690个重度FHB） |
+| 训练/验证划分 | 1,611训练 / 85验证 |
+
+### 训练设置
+- 分类器超参数：**全部使用默认设置**
+- 数据增强：随机旋转、随机裁剪
+- 评估指标：**准确率（Accuracy）**
+
+$$ \text{Accuracy} = \frac{\text{TP}+\text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}} $$
+
+---
+
+## 关键实验结果
+
+### Top-K波段数的影响
+
+| K值 | 验证集准确率 |
+|-----|------------|
+| 3 | ~90% |
+| 30 | **~100%（完美准确率）** |
+
+> [!important] 关键发现
+> - K=30时达到完美准确率
+> - 即使仅选3个波段，准确率也接近90%
+> - **波段数增加与准确率呈正相关**
+
+### 重要波段的分布分析
+
+- **关键波段并非均匀分布**，而是集中在特定波长范围：
+  - **700-750 nm**（对应绿色光谱区域）
+  - **800-875 nm**（对应红色光谱区域）
+- **启示**：大部分高光谱数据对FHB检测可能是冗余的，有效利用这两个关键光谱区域的信息即可准确识别FHB
+
+### 方法优势总结
+
+1. **性能优异**：Top-30波段达到近乎完美的分类准确率
+2. **计算高效**：显著降低数据维度（101→30），无需GPU
+3. **可解释性强**：识别出的关键波段与植物生理特征（叶绿素吸收、红色边缘效应）相关联
+
+---
+
+## 创新点
+
+1. **自监督/无监督范式**：利用K-means聚类生成伪标签，**完全摆脱人工标注依赖**
+2. **轻量级部署**：无需GPU和深度神经网络，适合大规模农业应用
+3. **简化端元提取**：用Top-K波段选择替代传统优化-based端元提取，**大幅降低计算复杂度**
+4. **分类器无关性**：提取的特征鲁棒紧凑，可搭配任意分类器
+5. **可解释性贡献**：揭示了FHB检测中关键光谱区域（700-750nm和800-875nm），为农业遥感提供生理学见解
+
+---
+
+## 局限性
+
+1. **验证范围有限**：仅在单一竞赛数据集上验证（1,696个样本），**泛化性待检验**
+2. **二分类局限**：仅区分轻度/重度FHB，未涉及健康/轻度/重度多分类场景
+3. **K值敏感性**：虽然K=2由两种方法确认，但未讨论K值选择对结果的影响
+4. **与深度学习方法对比缺失**：未与CNN等深度学习方法进行定量对比
+5. **竞赛报告性质**：缺乏系统性消融实验（如不同聚类方法、不同特征选择策略的对比）
+6. **空间信息未利用**：仅使用光谱信息，未充分利用HSI的空间-光谱联合特征
+
+---
+
+## 待确认问题解答
+
+| 第一轮问题 | 答案 |
+|-----------|------|
+| 端元提取与Top-K选择的结合方式？ | **串联**：先K-means聚类生成伪标签 → 伪标签引导Top-K波段选择 → 选出的波段作为端元特征 |
+| Top-K波段选择的算法细节？ | 利用K-means伪标签进行特征重要性挖掘，选出判别力最强的K个波段 |
+| K值如何确定？ | 肘部法则 + 轮廓分析，两种方法一致确定K=2 |
+| 使用的分类器？ | 主：LightGBM；对比：SVM |
+| 数据规格？ | 101波段，450-950nm，4nm分辨率，60m飞行高度，4cm/像素 |
+
+---
+
+## 关键公式与算法总结
+
+**准确率公式**：
+$$\text{Accuracy} = \frac{\text{TP}+\text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}}$$
+
+**算法流程**（伪代码）：
+```
+1. 输入: HSI数据 X ∈ R^{N×B} (N样本, B=101波段)
+2. 预处理: X_norm = Normalize(X), X_avg = SpectralAverage(X_norm)
+3. 确定K值: Elbow Method + Silhouette Analysis → K=2
+4. 伪标签: labels = KMeans(X_avg, K=2)
+5. 特征选择: important_scores = FeatureImportance(X_avg, labels)
+   selected_bands = TopK(important_scores, k=30)
+6. 特征提取: features = X[:, selected_bands]
+7. 分类: pred = LightGBM(features) 或 SVM(features)
+8. 输出: mild-FHB / serious-FHB
+```
+
+---
+
+## 与第一轮总结的整合
+
+第一轮总结中提出的**方法定位**（对比传统方法与深度学习方法）在详细阅读后得到验证：本文方法确实在**硬件需求低、无需标注、可扩展性强**三个维度上具有显著优势。同时，第一轮总结中关于"端元提取与波段选择交互机制不明确"的疑问已得到解答——两者是**串联关系**，且端元提取被简化为直接使用Top-K波段作为端元特征。
+
+---
+
+APPENDIX_NEEDED: NO — 论文主体已完整描述了方法流程、实验设置和结果分析，核心问题均已解答。附录可能包含更多实验细节（如LightGBM具体参数、更多可视化结果），但已不影响对方法本身的理解。
+
+@@@END@@@
+@@@PATH@@@ LICENSE
+MIT License
+
+Copyright (c) 2026
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+@@@END@@@
+@@@PATH@@@ README.md
+<div align="center">
+
+# 小麦赤霉病特征降维与模型构建
+
+**Fusarium Head Blight (FHB) Severity Modeling from Multispectral Features**
+
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-active--iterating-orange)
+![Data](https://img.shields.io/badge/Samples-165-lightgrey)
+![Features](https://img.shields.io/badge/Features-117-lightgrey)
+
+</div>
+
+> 在 **165 样本 × 117 特征**的高维小样本约束下，用尽量少、可解释的特征判断小麦是否患病并估计病情严重度——**严格遵循无泄露交叉验证**，得到一个诚实的结论，并明确锁定了下一阶段的改进方向。
+
+---
+
+## 目录
+
+- [这个项目做什么](#这个项目做什么)
+- [核心结果](#核心结果)
+- [快速开始](#快速开始)
+- [安装与环境](#安装与环境)
+- [复现实验](#复现实验)
+- [方法路线](#方法路线)
+- [科研规范](#科研规范)
+- [GNN 的边界](#gnn-的边界)
+- [进行中：改进方向](#进行中改进方向)
+- [目录结构](#目录结构)
+- [参考文献](#参考文献)
+- [许可证](#许可证)
+
+---
+
+## 这个项目做什么
+
+小麦赤霉病（FHB）是世界性小麦病害。本项目针对遥感病害检测中最难的一类场景——**高维小样本（HD-SS）**：仅 165 个样本、117 维特征（植被指数 / 波段统计量 / GLCM 纹理），系统比较了「传统特征优选」与「深度表示学习（AE / GNN）」在两类任务上的表现：
+
+1. **分类**：判断「健康 / 患病」；
+2. **回归**：估计病情严重度 DI（有界连续量 [0,100]）。
+
+**你能从这里得到什么**：一套可复现的「无泄露小样本建模」流程，以及一个关于「小样本下何时该用深度学习、何时不该用」的真实案例。
+
+---
+
+## 核心结果
+
+> 所有数字均为**无泄露嵌套交叉验证**的严格结果，出处见 `results/` 下的指标 CSV。
+
+| 方法 | 特征维度 | 分类准确率 | 回归 R²（DI） | 可解释性 |
+|---|---|---|---|---|
+| 传统特征 + 随机森林（Boruta 特征） | 30 | **≈0.79**（AUC 0.86） | **≈0.449** | ★★★ |
+| 传统特征 + SVM / LR | 2–30 | ≈0.76–0.80 | 0.30–0.39 | ★★★ |
+| AutoEncoder 2D + RF | 2 | ≈0.71 | ≈0.26 | ★☆☆ |
+| 图神经网络（SageAE）2D + RF | 2 | ≈0.77 | ≈0.35 | ★★☆ |
+
+**三个客观结论：**
+
+1. **分类不需要深度学习** —— 少量红边指数即可达 ~0.80，且物理可解释；
+2. **严重度回归是小样本硬天花板** —— 传统 RF 的 R²≈0.449 已是最优；
+3. **朴素深度降维整体不如传统特征** —— 但归纳式 GNN（R²≈0.35）明显优于普通 AE（R²≈0.26），说明空间先验确有增益。
+
+---
+
+## 快速开始
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/Carysaireen/wheat-fhb-rs-ml.git
+cd wheat-fhb-rs-ml
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 跑通完整流程（6 个脚本，按顺序执行）
+cd src
+python create_split.py                 # 划分并封存测试集
+python traditional_baseline_cv.py      # 传统基线（交叉验证）
+python nested_traditional_tuning.py    # 传统方法嵌套调优
+python autoencoder_cv.py               # AE 无泄露评估（需 torch）
+python gnn_inductive_cv.py             # GNN 归纳式评估（需 torch）
+python nested_deep_tuning.py           # 深度方法嵌套调优（需 torch）
+```
+
+> 只想看**传统方法**的结果？前三步即可，无需安装 `torch`。
+
+---
+
+## 安装与环境
+
+| 项 | 要求 |
+|---|---|
+| Python | ≥ 3.9 |
+| 必需依赖 | `numpy` `pandas` `scikit-learn` `matplotlib` `boruta` |
+| 可选依赖（仅 AE/GNN） | `torch` `torch-geometric` |
+
+```bash
+# 最小安装（仅传统方法）
+pip install numpy pandas scikit-learn matplotlib boruta
+
+# 完整安装（含深度学习）
+pip install -r requirements.txt
+```
+
+**注意事项（隐性契约，务必阅读）：**
+
+- 数据源文件为 **GBK 编码**（`data/raw/Wheat_Scab_Features_Extraction_Ordered_region.csv`），脚本已用 `encoding='gbk'` 读取，**请勿另存为 UTF-8**；
+- 脚本通过 `Path(__file__).resolve().parents[1]` 定位仓库根目录，**必须在 `src/` 目录下运行**（`cd src` 后再执行）；
+- 部分脚本原本引用本地 `vendor/` `vendor_torch/` 目录（本项目打包的离线依赖），现已改为**优雅降级**：目录存在则优先使用，不存在则回退到系统安装的包。**仓库不包含 vendor 目录**（见 `.gitignore`），请正常 `pip install`。
+
+---
+
+## 复现实验
+
+完整实验分三步，依次产出可复现的结果：
+
+```bash
+cd src
+
+# Step 1 — 数据划分（封存测试集，random_state=42，20% 分层）
+python create_split.py
+
+# Step 2 — 传统基线 + 嵌套调优
+python traditional_baseline_cv.py
+python nested_traditional_tuning.py
+
+# Step 3 — 深度学习（可选，需 torch）
+python autoencoder_cv.py
+python gnn_inductive_cv.py
+python nested_deep_tuning.py
+```
+
+各脚本输出的指标 CSV 会写入 `results/<阶段>/`。汇总结果见 `results/stage_summary/`。
+
+---
+
+## 方法路线
+
+```
+第一阶段 · 传统特征优选
+  Pearson 去冗余 + ReliefF + 随机森林重要性 + Boruta 三重过滤
+  → 117 维 → 16 个核心特征 → 「黄金双特征」NREDI1 + NDVIre2
+
+第二阶段 · 严重度回归探索
+  直接回归 → 发现 DI=0 干扰 → 两阶段「先分类再回归」→ 纯患病样本回归
+
+第三阶段 · 深度学习降维
+  普通 AutoEncoder（117→2）  vs  图神经网络（光谱 + 空间建图，117→2）
+```
+
+---
+
+## 科研规范
+
+严格遵循 **无泄露（leakage-free）** 实验设计：
+
+- 测试集**一次性封存**，探索阶段只用训练集及内部交叉验证；
+- 按行分层的 `StratifiedKFold`（分类）/ `KFold`（回归）；
+- 逐训练折**独立拟合**缺失值填补、标准化、AE / GNN 编码器；
+- 深度表示学习采用**训练图 + 验证节点归纳式隔离**编码。
+
+> 正是这套流程，让结论从初版探索期的乐观估计（分类 0.82 / R² 0.5）收敛到严格估计（分类 ~0.80 / R² 0.26–0.449）。**敢于用更严的方法推翻自己的漂亮数字，是本项目的核心价值。**
+
+---
+
+## GNN 的边界
+
+GNN 是本项目试错成本最高的环节，前后经历两次修正：
+
+- **初版建图不成立**：Haversine 硬阈值（≈55 米）在麦田级样本下使节点几乎全成孤点，GCN 退化为普通 MLP，空间信息基本未生效——这一缺陷被"83% 略胜 AE"的表面数字掩盖；
+- **v2 用 KNN 重建图并真正修复了孤点问题**：图审计显示 K=5 时每个节点恰有 5 个邻居、0 个孤立节点，并采用 GraphSAGE 式归纳编码 + 验证节点隔离；
+- **但建图仍依赖经纬度**，而数据存在 `O_Name` 历史重复记录，「经纬度 = 独立田块」的前提存疑。
+
+结论：归纳式 GNN（回归 R²≈0.35）确优于普通 AE（R²≈0.26），空间先验有潜在价值；但受限于样本空间独立性的可靠性，**未作为最终采纳方法**。
+
+---
+
+## 进行中：改进方向
+
+本项目是一个**仍在迭代的起点**。当前结论暴露了两条硬约束——**样本量** 与 **严重度回归的定义方式**：
+
+**短期（可直接落地）**
+
+- 回归问题重定义：DI 改**有序回归 / 多任务**，避免"用分类型特征拟合连续梯度"的天花板；
+- 分类阈值优化：仅在训练集内确定阈值，观察 Recall / F1 / 校准；
+- 完全嵌套特征选择：每个外层训练折内重新运行 Boruta。
+
+**中期（需少量新数据 / 算力）**
+
+- 自监督 / 对比预训练（ContrastBS、LMCN）利用无标签结构；
+- GNN 升级：GAT + DropEdge、光谱相似度建边；
+- 补充红边 / 红光指数。
+
+**长期（高收益、有门槛）**
+
+- 遥感基础模型微调（SatMAE / Prithvi）；
+- 深度全特征回归（Deng et al. 像素级 DI 反演），把 R² 从 0.45 推向更高。
+
+> 判断依据与领域调研见 `复盘报告_小麦赤霉病特征降维与模型构建.md`；决策推理与踩坑见 `docs/研究过程与方法论反思.md`。
+
+---
+
+## 目录结构
+
+```
+.
+├── src/          无泄露建模代码（13 个脚本）
+├── data/raw/     原始特征数据（GBK 编码 CSV）
+├── results/      关键结果图表
+├── docs/         分阶段实验记录 + 研究过程与方法论反思
+├── requirements.txt
+├── 复盘报告_小麦赤霉病特征降维与模型构建.md
+├── arxiv精读_FHB_2409.00395.md
+└── README.md
+```
+
+---
+
+## 参考文献
+
+- Lin et al., *Self-supervised FHB Detection with HSI & Feature Mining*, arXiv:2409.00395, 2024.
+- Liu et al., *Monitoring Wheat FHB with UAV Hyperspectral*, Remote Sensing 12(22):3811, 2020.
+- Bhatti et al., *Dimension Reduction Fuzzy Graph Network*, Comp. Elec. Agri. 226:109431, 2024.
+- Deng et al., *Pixel-level regression for UAV hyperspectral wheat stripe rust DI*, Comp. Elec. Agri., 2023.
+
+---
+
+## 许可证
+
+[MIT](LICENSE)
+
+@@@END@@@
+@@@PATH@@@ requirements.txt
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+matplotlib>=3.7
+boruta>=0.4.3
+
+# 深度学习（仅运行 AE / GNN 相关脚本时需要）
+torch>=2.0
+torch-geometric>=2.4
+
+@@@END@@@
+@@@PATH@@@ 复盘报告_小麦赤霉病特征降维与模型构建.md
+# 小麦赤霉病特征降维与模型构建 · 项目复盘报告
+
+> 复盘日期：2026-08-13
+> 数据基础：`初版/Wheat_Scab_Features_Extraction_Ordered_region.csv`（165 个样本 × 117 个特征）
+> 任务：① 二分类（健康 vs 患病）② 回归（病情严重度 DI，0–100）
+> 说明：本报告基于 `初版/` 下 9 个 Python 脚本、6 个 CSV 中间产物、2 份「过程记录」docx 还原项目演进，并结合检索到的领域论文给出后续思路。
+
+---
+
+## 一、项目起源与定位
+
+项目的起点是一张 **小麦赤霉病（Fusarium Head Blight, FHB）多光谱特征表**：特征由 Sentinel‑2 波段（B2–B12）派生，包含三类手工特征——
+
+- **植被指数（VI）**：ARVI、NDVI、SIPI、DVI、TVI、EVI、OSAVI、RDVI、MSR、PSRI 系列、NDVIre 系列、NREDI 系列、REDSI 等；
+- **波段统计量（MEA/VAR）**：各波段的均值、方差；
+- **GLCM 纹理特征（HOM/CON/DIS/ENT）**：各波段灰度共生矩阵纹理。
+
+目标很明确：**用尽量少的、可解释的特征，把"有没有病"判准，并把"病得有多重"估出来**。整个项目围绕"特征降维 → 建模 → 评估"展开，是一个典型的"高维小样本（HD‑SS）遥感农作物病害"问题。
+
+---
+
+## 二、技术演进时间线
+
+| 阶段 | 核心动作 | 关键产出 | 主要结论 |
+|---|---|---|---|
+| **第一阶段** 传统特征优选 | Pearson 相关去冗余 + ReliefF + 随机森林重要性 + Boruta 三重过滤 | 从 117 维筛出 **16 个核心特征**，再提炼 **黄金双特征 NREDI1 + NDVIre2** | 双特征 + LR/SVM 交叉验证 **准确率 0.8242** |
+| **第二阶段** 严重度回归探索 | 直接回归 DI → 发现 R² 低 → 试"先分类再回归"两阶段 → 剔 DI=0 做纯患病样本回归 | DI=0 干扰严重；剔除后 R² 从 0.61 降到 0.50（更客观） | **16 特征 + RF** 回归最佳 **R²≈0.499**；双特征回归 R² 仅 0.35 |
+| **第三阶段** 深度学习降维 | ① 普通 AutoEncoder（117→2）② 图神经网络 GAE（光谱+空间经纬度建图，117→2） | AE 2D 特征；GNN 2D 特征（修正过平滑后） | GNN 分类 **83.03%**、回归 **R² 0.4815**，逼近 16 特征 RF；AE 不敌传统 |
+
+### 关键结果汇总表
+
+| 方法 | 特征维度 | 分类准确率 | 回归 R²（DI） |
+|---|---|---|---|
+| Baseline（全部 117 维） | 117 | — | — |
+| Boruta 16 维 | 16 | ≈0.82 | **0.499**（RF） |
+| 黄金双特征 NREDI1+NDVIre2 | 2 | **0.8242**（LR/SVM） | 0.3507（RF） |
+| 普通 AutoEncoder 2D | 2 | 0.8061（RF） | 0.2852（RF） |
+| GNN（GAE）2D | 2 | **0.8303**（RF） | 0.4815（RF） |
+
+> 一句话总结你自己的过程记录：**分类任务不需要深度学习**（双特征已达 82.4% 且可解释）；**回归任务必须保留适度特征冗余**（16 维 ≈ 0.5），而朴素 AE 在小样本下反而更差。
+
+---
+
+## 三、关键决策的正确性评估
+
+✅ **Boruta + 双重过滤**：用 ReliefF（实例距离）+ 随机森林（分裂增益）+ Boruta（影子特征）三重交叉验证，比单一方法稳健。你在笔记里还主动纠正了"按表格前 20 列画热力图"的不科学做法，改为算法驱动——这是很好的科研严谨性。
+
+✅ **黄金双特征选在红边指数（NREDI/NDVIre）**：与 FHB 光谱机理一致（红光区与红边对赤霉病最敏感，见 Liu et al. 2020）。物理可解释、部署成本低，是论文里很吃香的卖点。
+
+✅ **两阶段（先分类再回归）**：正确识别并缓解了 DI=0（健康样本）对连续严重度回归的干扰。
+
+⚠️ **GNN 图构建粗糙**：仅用 Haversine 距离硬阈值建边，靠手工把 `distance_threshold` 从 0.005 砍到 0.0005 来压过平滑。这是"朴素版 DropEdge"，不是根本解法；且 GCN 无注意力，邻居等权聚合。
+
+⚠️ **AE 目标与任务脱节**：用 MSE 重构损失，学到的"流形"未必对齐"疾病判别/严重度"语义，2D 压缩又丢信息——这是它不敌传统特征的根因。
+
+---
+
+## 四、瓶颈诊断：你到底卡在哪
+
+把现象往根上挖，瓶颈其实是**三个叠加**：
+
+1. **高维小样本（HD‑SS）天花板**：165 样本 / 117 特征，Hughes 现象明显。任何"从零训练"的深度模型都欠约束，AE 过拟合、GNN 过平滑都源于此。
+2. **严重度连续回归本身难**：DI 有界 [0,100]、分布偏态、健康样本（DI=0）占大头。线性/树模型在"连续恶化梯度"上力不从心，R² 卡在 0.5 本质是**用 2 个分类型特征去拟合连续量**的方法天花板，而非调参问题。
+3. **表示学习弱 + 评估单一**：AE 没用上"无标签结构"；评估只有 Accuracy / R²，缺混淆矩阵、每类指标、校准与不确定性，难以定位下一步。
+
+> 本质：**不是方法不够多，而是 165 个样本撑不起高维深度模型，且"严重度"被当成普通回归定义了。**
+
+---
+
+## 五、相关论文与可借鉴思路（检索自 ArXiv / Remote Sensing / Computers and Electronics in Agriculture 等）
+
+### 方向 1 · 用自监督 / 对比学习替换"朴素 AE + Boruta"
+- **[arXiv:2409.00395] Self-supervised Fusarium Head Blight Detection with Hyperspectral Image and Feature Mining**（Lin 等, ICPR 2024 AI4Ag Challenge）— **同领域直接对标**。方法：HSI 端元提取（endmember extraction）+ top‑K 波段选择 + 自监督。可借鉴其"端元提取 + top‑K 选择"替代 Boruta，以及自监督预训练思路。代码已开源。
+- **ContrastBS**（Li 等, *Remote Sensing* 2023, 15(23):5495）— 对比学习做**无监督波段/特征选择**，保留物理意义、免标签。比 Boruta 更可解释，正适合你 117 维特征。
+- **SSCL：光谱‑空间对比学习波段选择**— 联合"光谱图"与"空间图"做对比，与你"光谱+空间"双特征设定天然契合。
+- **LMCN：Lightweight Multiview Mask Contrastive Network**（PRCV 2023）— 掩码自编码器 + 对比学习，**专为小样本 HSI 设计**。可直接套你的 117 维特征做预训练，再接 RF/LR 头，预期超过 2D AE。
+
+> 落地：**在 117 维上做对比/掩码自监督预训练 → 取编码特征 → 接分类/回归头**。这是对你 AE 最直接的升级。
+
+### 方向 2 · 攻克严重度回归（你最明确的短板）
+- **Deng 等 2023, "Pixel-level regression for UAV hyperspectral… wheat stripe rust DI"**（*Computers and Electronics in Agriculture*）— 像素级深度回归反演小麦条锈 DI，**R²=0.875**（HRNet + Laplacian 连续损失）。核心结论：**全波段端到端深度学习显著优于少量指数精简建模**（6 指数仅 0.829）。→ 你 2 特征回归 R²=0.35 是方法天花板，应上**深度全特征模型**。
+- **RoViT-KAN（2026）**— 把病害严重度当**有序回归（ordinal）**而非普通连续回归，配不确定性估计，消融证明有序头显著提升 MAE。→ 你可直接把 DI 做 **ordinal regression** 或**多任务**（共享编码器 → 分类头 + 有序回归头），避免级联误差。
+
+### 方向 3 · GNN 升级（你已踩到 DRFG 的门槛）
+- **DRFG 出处**：Bhatti 等 2024, *Computers and Electronics in Agriculture* 226:109431 — "**dimension reduction fuzzy graph network**" = 3D‑CNN + **GAT** + PCA + FCM。这正是你 GNN 思路的源头。升级点：**用图注意力（GAT）替 GCN**，按"光谱相似度 + 空间邻近"加权建边，缓解过平滑且保留异质性。
+- **DropEdge**— 随机丢边，原则性缓解过平滑（你手动调阈值≈其朴素版）。
+- **MTGCN（ICML 2024）**— 多轨道消息传递，同时治过平滑与过碾压，可上更深 GNN。
+- **建边改进**：用 KNN（光谱+空间）或注意力权重，取代纯 Haversine 硬阈值。
+
+### 方向 4 · 跳出小样本——预训练 / 基础模型 / 数据增强
+- **自监督 HSI 低秩多视角特征精炼**— 在**每类仅 5 个标签**的极端小样本下 OA 达 81–95%，证明无标签预训练增益巨大。
+- **遥感基础模型**（IBM Prithvi、SatMAE、Clay）— 在大规模卫星语料预训练，微调你 165 样本。这是现代解法。
+- **特征空间数据增强 / 伪标签 / Mixup**— 低成本扩充有效样本。
+
+### 方向 5 · FHB 专属特征与波段选择
+- **CARS‑Ridge**（ScienceDirect）— 竞争自适应重加权采样 + 岭回归，构造新指数 WFItwo/WFIthree，**有限数据下 91.4%**。CARS 是 Boruta 之外的强候选。
+- **Liu 等 2020（Remote Sensing 12(22):3811）**— 红光区与红边对 FHB 严重度最关键，改进叶绿素吸收反射指数最优。→ 你的红边策略正确，可补充更多红边/红光指数。
+
+---
+
+## 六、推荐的下一步路线（按可行性排序）
+
+**立即可做（低风险、复用现有代码）**
+1. 用 ContrastBS / SSCL 思路做**对比式特征选择**，替代或补充 Boruta；
+2. 严重度改 **ordinal regression / 多任务**（共享编码器 → 分类头 + 有序回归头）；
+3. GNN 换 **GAT + DropEdge**，建边改 KNN（光谱+空间）。
+
+**中期（需少量新数据/算力）**
+4. 在 117 维上做 **掩码/对比自监督预训练**（LMCN 思路）再接头；
+5. **CARS 波段选择** + 补充红边指数，验证是否超 Boruta 的 16 特征。
+
+**高收益但有门槛**
+6. **遥感基础模型微调**（SatMAE / Prithvi）迁移到你的 Sentinel‑2 特征；
+7. **深度全特征回归**（Deng 思路）把 R² 从 0.5 推向 0.8+。
+
+---
+
+## 七、一句话复盘
+
+> 你现在的天花板不是"方法不够多"，而是 **165 个样本撑不起高维深度学习 + 严重度被当普通回归定义**。突破口 = **自监督预训练（把无标签结构用起来）** + **重新定义回归问题（有序 / 多任务 / 深度全特征）** + **GNN 注意力化**。
+
+---
+
+### 附：核心论文清单（速查）
+
+| 方向 | 论文 | 来源 | 链接 |
+|---|---|---|---|
+| FHB 自监督检测 | Self-supervised FHB Detection with HSI & Feature Mining | arXiv:2409.00395 (2024) | https://arxiv.org/abs/2409.00395 |
+| 对比式波段选择 | ContrastBS | Remote Sensing 15(23):5495 (2023) | https://www.mdpi.com/2072-4292/15/23/5495 |
+| 光谱‑空间对比选择 | SSCL | Expert Systems / 2026 | https://www.sciencedirect.com/science/article/pii/S0957417426005543 |
+| 小样本掩码对比 | LMCN | PRCV 2023 | https://doi.org/10.1007/978-981-99-8462-6_39 |
+| 条锈 DI 深度回归 | Pixel-level regression… wheat stripe rust DI | Comp. Elec. Agri. (2023) | https://www.sciencedirect.com/science/article/abs/pii/S0168169923008220 |
+| 有序回归多任务 | RoViT-KAN | (2026) | https://link.springer.com/article/10.1186/s12870-026-08786-2 |
+| DRFG / GAT | Dimension Reduction Fuzzy Graph Network | Comp. Elec. Agri. 226:109431 (2024) | https://doi.org/10.1016/j.compag.2024.109431 |
+| GNN 过平滑 | DropEdge / MTGCN (ICML 2024) | — | https://openreview.net/forum?id=1sRuv4cnuZ |
+| FHB 波段选择 | CARS-Ridge + 新指数 | ScienceDirect (2023) | https://www.sciencedirect.com/science/article/pii/S153751102300243X |
+| UAV 高光谱 FHB | Monitoring Wheat FHB with UAV Hyperspectral | Remote Sensing 12(22):3811 (2020) | https://doi.org/10.3390/rs12223811 |
+
+@@@END@@@
+@@@PATH@@@ docs/stage-summary.md
+# 阶段总结
+
+详见 `results/stage_summary/stage_report.md`。图表包括分类ROC-AUC排序、分类多指标画像、回归R²排序、回归R²–RMSE权衡和外层折间波动。
+
+@@@END@@@
+@@@PATH@@@ docs/step1-4.md
+# 步骤 1–4 执行记录
+
+## 步骤 1：任务与指标
+
+- 分类：`Unnamed: 2`（健康/患病），Accuracy、F1、Recall、ROC-AUC。
+- 回归：`DI`（病害严重度），仅在 `DI > 0` 样本上建模，R²、RMSE、MAE。
+
+## 步骤 2：样本独立性
+
+数据共 165 行、117 个候选特征（第 10 列起）。经用户校正，每一行都是独立且不重复的数据对象，因此按行进行分层随机划分；`O_Name` 仅作为记录字段，不作为分组变量。
+
+## 步骤 3：固定划分
+
+按组进行约 80%/20% 划分，随机种子为 42，并同时保持分类标签分布尽量接近。具体组名和行号见 `data/splits/`。
+
+## 步骤 4：测试集封存
+
+测试集快照已单独保存。探索阶段不得使用测试集选择特征、预处理、模型、超参数或训练轮数；只有方案冻结后才进行最终测试。
+
+@@@END@@@
+@@@PATH@@@ docs/step10.md
+# 步骤10：无泄露归纳式GNN
+
+每个外层折只用训练节点的经纬度建立5近邻训练图，并仅用训练节点特征训练GraphSAGE式图自编码器。验证节点不进入训练图；模型冻结后，验证节点只读取5个最近训练节点的已学习表示进行归纳式编码，不能向训练节点传播信息。每折保存图规模、平均邻居数、孤立节点、训练损失和下游模型指标。测试集未读取。
+
+本实现与原GCN全图转导式方案不同，重点是得到无泄露的开发阶段估计；K=5为预设值，后续若比较K值，必须在内层训练验证中选择。
+
+@@@END@@@
+@@@PATH@@@ docs/step11.md
+# 步骤11：深度表示嵌套调参
+
+外层固定5折评价，内层3折选择普通AutoEncoder或归纳式GNN、编码维度2/4/8、AutoEncoder训练轮数80/150，以及GNN邻居数3/5/8。分类内层以ROC-AUC选择，回归以内层RMSE选择。外层验证折和封存测试集不参与配置选择。
+
+@@@END@@@
+@@@PATH@@@ docs/step5.md
+# 步骤 5：训练集内部验证机制
+
+- 分类：对 `train.csv` 使用固定的 5 折 `StratifiedKFold`（shuffle=True，random_state=42）。所有分类候选模型必须复用 `data/cv/classification_folds.csv`。
+- 回归：只保留 `DI > 0` 的训练样本。经用户确认每行独立且不重复，使用固定的 5 折 `KFold`（shuffle=True，random_state=42）。所有回归候选模型必须复用 `data/cv/regression_folds.csv`。
+- 每个样本的折号已保存；模型评估代码应使用这些折号构造预定义 split，而非重新生成折分。
+- 测试集 `test_locked.csv` 未参与任何折分或验证。
+
+@@@END@@@
+@@@PATH@@@ docs/step6.md
+# 步骤 6：无泄露预处理流程
+
+## 数据审计
+
+训练集含 132 行、117 个候选特征。未发现缺失值、无穷值或常量特征；IQR 规则标记出 754 个潜在异常单元格。异常值可能包含真实病害信息，因此不自动删除样本。
+
+## 两套候选方案
+
+1. 标准方案：训练折中位数填补 → 标准化。
+2. 稳健方案：训练折中位数填补 → IQR 截尾 → 标准化。
+
+两套方案将在后续训练集内部交叉验证中公平比较。当前不依据测试集作决定。
+
+## 防泄露规则
+
+每一折都新建预处理器，只在该折训练部分执行 `fit`；验证部分只执行 `transform`。中位数、IQR 上下界、均值和标准差均不得由验证折或封存测试集贡献。
+
+## 产出
+
+- `src/preprocessing.py`：统一预处理组件。
+- `src/audit_preprocessing.py`：逐折拟合与完整性审计。
+- `results/preprocessing/fold_preprocessing_audit.csv`：分类与回归各折、两种方案的审计结果。
+- `results/preprocessing/data_quality_summary.json`：训练数据质量摘要。
+
+@@@END@@@
+@@@PATH@@@ docs/step7-part1.md
+# 步骤 7.1：训练折内特征选择（探索版）
+
+本阶段只使用训练集及其固定分类折。每个折中，先在该折训练部分拟合 StandardScaler、随机森林和互信息评分，再取两种方法各自 Top-20 的交集；同时在同一训练部分运行 Boruta（随机森林基学习器，max_iter=30，perc=80）。验证折和封存测试集不参与特征排序。
+
+该方法用于观察特征稳定性，不是最终特征选择结论。后续必须将候选特征选择与模型放入统一交叉验证，并比较不同 Top-K、Boruta（若安装依赖）及稳定性阈值。
+
+@@@END@@@
+@@@PATH@@@ docs/step7-part2.md
+# 步骤 7.2：特征集合的统一交叉验证比较
+
+比较方案：全部117特征、当前2特征、RF+互信息稳定率3/5、4/5、5/5，以及 Boruta 确认率3/5、4/5、5/5。
+
+每个方案使用完全相同的5折分类划分、相同的预处理和三种模型（逻辑回归、RBF-SVM、随机森林）。每折单独拟合模型并计算 Accuracy、F1、Recall、ROC-AUC，再汇总均值和标准差。测试集未读取。
+
+@@@END@@@
+@@@PATH@@@ docs/step7-part3.md
+# 步骤 7.3：特征选择器对照与候选集合整理
+
+本阶段对 RF+互信息和 Boruta 的 3/5、4/5、5/5 稳定性集合做并排比较，记录特征数量、共同特征和方法特有特征，并生成集合大小图和重叠图。
+
+这里的“共同/特有”用于理解方法差异，不代表因果关系，也不直接冻结最终特征。最终方案仍需在严格的内层特征选择与外层评估中确认。
+
+@@@END@@@
+@@@PATH@@@ docs/step8.md
+# 步骤 8：传统特征基线
+
+在训练集内部比较四组候选特征：全部117特征、原方案双特征、两种筛选器共同的6个稳定特征、Boruta确认率≥3/5特征。分类使用固定StratifiedKFold，回归使用固定KFold；模型包含LR/SVM/RF及Ridge/SVR/RF回归。预处理和模型均在每个训练折拟合，验证折只转换和评估，测试集未读取。
+
+@@@END@@@
+@@@PATH@@@ docs/step8b-nested-tuning.md
+# 补做：传统模型嵌套交叉验证与联合优化
+
+外层固定5折仅负责评价；每个外层训练部分使用3折内层交叉验证，同时选择黄金双特征、共同6特征或Boruta稳定特征，选择标准预处理或训练折内IQR截尾，并优化LR/SVM/RF及Ridge/SVR/RF参数。保存每个外层折的选择与成绩，测试集未读取。
+
+注意：Boruta和共同特征候选名单源于此前训练集探索，因此本轮重点消除“调参—评价”偏差；最终严格估计仍应在外层训练部分重新生成特征名单，或使用封存测试集进行一次性评价。
+
+@@@END@@@
+@@@PATH@@@ docs/step9.md
+# 步骤9：无泄露AutoEncoder
+
+每个固定验证折均重新拟合StandardScaler和二维AutoEncoder；两者只接触该折训练部分。训练完成后分别编码训练部分和验证部分，再用二维编码训练LR/RF分类器或RF回归器。每折使用独立模型并保存指标与训练损失，封存测试集未读取。原方案黄金双特征已在步骤8中以`current_2`作为传统基线比较。
+
+@@@END@@@
+@@@PATH@@@ docs/研究过程与方法论反思.md
+# 研究过程与方法论反思
+
+> 本文档是对本项目「从探索到收敛」全过程的回顾，重点记录**决策背后的推理、踩过的坑与自我纠错**，
+> 而非重复结果数字（结果见 `README.md` 与 `results/`）。所有陈述均可回溯到 `src/` 代码与 `results/` 指标文件。
+
+---
+
+## 一、起点：一个「看起来简单、实则处处是坑」的问题
+
+项目的起点是一张 165 行 × 117 列的 Sentinel-2 派生特征表，任务有二：
+
+1. 二分类——判断「健康 / 患病」；
+2. 回归——估计病情严重度 DI（0–100 连续量）。
+
+这是典型的**高维小样本（HD-SS）**问题。最危险的不是「模型不收敛」，而是**小样本下极易做出看似漂亮、实则泄露的假结果**。整个项目最核心的自觉，就是围绕这一点建立的。
+
+---
+
+## 二、第一次纠错：拒绝「为了画图而画图」
+
+早期的特征相关热力图，直接按表格**前 20 列**截取绘制。这个做法被当场否定，理由写进了记录：
+
+> 「按表格顺序截前 20 个画热力图是毫无科学根据的，仅仅是为了展示『代码能画热力图』。」
+
+改为**算法驱动**：先用 Pearson 相关、ReliefF（实例距离）、随机森林重要性、Boruta（影子特征）四重交叉验证筛选，再对筛选后的特征画图。
+
+**这条反思的价值**：它确立了项目的一条底线——**可视化和实验必须服务于科学问题，而不是演示代码能力**。这也是后来「无泄露重构建」的思想源头。
+
+---
+
+## 三、方法选择上的取舍：为什么最终是「传统特征 > 深度学习」
+
+项目花了很大力气同时走两条路，最终结论偏传统：
+
+| 路线 | 分类（准确率/AUC） | 回归（R²） | 结论 |
+|---|---|---|---|
+| 黄金双特征 NREDI1+NDVIre2 | 0.80 / 0.79 | 0.343 | 可解释性最强，分类足够 |
+| Boruta 特征 + RF | 0.79 / 0.86 | **0.449** | 回归最优，保留适度冗余 |
+| AutoEncoder 2D + RF | 0.71 | 0.26 | 欠约束，压缩丢信息 |
+| 归纳式 GNN 2D + RF | 0.77 | 0.35 | 优于 AE，仍不敌传统 |
+
+**关键判断**：
+
+- **分类不需要深度学习**——两个红边指数（NREDI1 + NDVIre2）已能稳定到 ~0.80，且物理可解释；
+- **回归必须保留适度特征冗余**——严重度是连续梯度，压到 2 维会损失信息，16–30 维的 RF 反而最好；
+- **朴素 AE 在小样本下最差**——MSE 重构学到的流形与「疾病判别 / 严重度」语义不对齐，2D 压缩又丢信息。
+
+---
+
+## 四、最痛的一课：图神经网络（GNN）的两次试错
+
+GNN 是本项目试错成本最高的环节，教训最值得记录。
+
+### 第一次：初版的图「根本没建起来」
+
+初版 `gnn_feature_extraction.py` 用 Haversine 距离**硬阈值 0.0005 弧度（≈55 米）**建边。但麦田级样本的样点间距通常在数百米到数公里，这个阈值下绝大多数节点沦为**孤点**，GCN 退化为一个「117→32→2 的普通 MLP 自编码器」。
+
+表面看「GNN 83% 略胜 AE 80%」，实际**空间信息基本没生效**，差异更可能来自随机种子。这个假象之所以危险，是因为它「看起来合理」。
+
+### 第二次：v2 真正修复了建图，但暴露出更深的问题
+
+v2 的 `gnn_inductive_cv.py` 做了三件对的事：
+
+1. 用 **KNN 建图**取代手工阈值——图审计（`results/gnn_inductive_cv/graph_audit.csv`）显示 K=5 时**每个节点恰有 5 个邻居、0 个孤立节点**，建图健康；
+2. 用 **GraphSAGE 式归纳编码**（`s1(x) + n1(a@x)`）替代 GCN 的传递式聚合；
+3. 做**训练图 + 验证节点归纳隔离**，避免测试信息混入表示学习。
+
+修复后，归纳式 GNN（回归 R²≈0.35）**确实优于普通 AE（R²≈0.26）**，证明空间先验有潜在价值。
+
+**但根本限制仍未解决**：建图依赖 `O_Lat / O_Lng` 经纬度，而数据存在 `O_Name` 历史重复记录，「经纬度 = 独立田块」的前提存疑。图的物理结构本身可能被污染——这是比「过平滑」更上游的问题。
+
+### 结论
+
+> GNN 如实记录为「优于 AE、但受限于样本空间独立性」的**有信息的负结果**，不采纳为最终方法。
+> 正确方向：GAT + DropEdge 缓解过平滑、以光谱相似度而非纯经纬度建边、先核实样本独立性。
+
+---
+
+## 五、方法论的自觉：从「漂亮数字」到「诚实结论」
+
+本项目最值得强调的，是一次**主动的自我推翻**：
+
+- 初版探索期得到「分类 0.82、回归 R² 0.5」的乐观数字；
+- 随后主动建立 `project_v2/`，用**无泄露（leakage-free）**流程重做：
+  - 测试集**一次性封存**（`create_split.py`，20% 分层划分，`random_state=42`）；
+  - 逐训练折**独立拟合**标准化、填补、AE / GNN 编码器；
+  - 深度方法用**嵌套交叉验证**（外层评价 + 内层选超参）；
+- 结果收敛到更保守的「分类 ~0.80、回归 R² 0.26–0.449」。
+
+**这不是退步，而是更接近真实**。在 165 样本的规模下，敢于承认「深度学习不如传统特征」「GNN 受限于数据」，比报告一个漂亮的数字更需要科研诚实。
+
+---
+
+## 六、留下的方法论资产
+
+1. **无泄露实验框架**：`create_split.py`（封存）→ `traditional_baseline_cv.py`（基线）→ `nested_*_tuning.py`（嵌套调优），构成可复用的 HD-SS 建模流程；
+2. **特征选择的多方法交叉验证**：Pearson + ReliefF + RF 重要性 + Boruta，并记录各折稳定性（`results/feature_selection/feature_stability.csv`）；
+3. **图神经网络的健康审计**：把「建图是否退化」作为独立检查项（`graph_audit.csv`），避免被表面指标误导；
+4. **清晰的证据分级**（见 `docs/stage-summary.md`）：区分「直接支持」「合理推测」「尚待验证」。
+
+---
+
+## 七、如果重来一次，会改什么
+
+1. **先核实样本独立性，再谈空间建模**——在碰 GNN 之前，先查清 `O_Name` 重复记录是否意味着样本非独立；
+2. **回归问题先重定义，再选模型**——DI 有界、偏态、健康样本占大头，应优先考虑有序回归 / 多任务，而非在普通回归上调参；
+3. **评估更全面**——补充混淆矩阵、每类指标、校准曲线与不确定性，而不只看 Accuracy / R²；
+4. **把「负结果」当作一等成果来记录**——本项目最宝贵的发现（深度学习在小样本下不成立）恰恰来自一次负结果。
+
+@@@END@@@
+@@@PATH@@@ src/audit_preprocessing.py
+from pathlib import Path
+import json
+import numpy as np
+import pandas as pd
+from preprocessing import build_preprocessor
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / 'data'
+OUT = ROOT / 'results' / 'preprocessing'
+
+
+def audit(task, data, folds, row_indices):
+    features = data.columns[9:].tolist()
+    rows = []
+    for variant in ['standard', 'iqr_clip']:
+        for fold in sorted(folds.fold.unique()):
+            valid_rows = set(folds.loc[folds.fold == fold, 'row_index'].astype(int))
+            valid_mask = np.array([idx in valid_rows for idx in row_indices])
+            X_train = data.loc[~valid_mask, features].to_numpy(float)
+            X_valid = data.loc[valid_mask, features].to_numpy(float)
+            pipe = build_preprocessor(clip_outliers=(variant == 'iqr_clip'))
+            Xt = pipe.fit_transform(X_train)
+            Xv = pipe.transform(X_valid)
+            rows.append({
+                'task': task, 'variant': variant, 'fold': int(fold),
+                'n_train': len(X_train), 'n_valid': len(X_valid),
+                'train_missing_after': int(np.isnan(Xt).sum()),
+                'valid_missing_after': int(np.isnan(Xv).sum()),
+                'train_scaled_mean_abs_max': float(np.abs(Xt.mean(axis=0)).max()),
+                'train_scaled_std_error_max': float(np.abs(Xt.std(axis=0) - 1).max()),
+                'valid_abs_max': float(np.abs(Xv).max()),
+            })
+    return rows
+
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    train = pd.read_csv(DATA / 'splits' / 'train.csv')
+    cls_folds = pd.read_csv(DATA / 'cv' / 'classification_folds.csv')
+    rows = audit('classification', train, cls_folds, train.index.to_numpy())
+
+    sick = train[train['DI'] > 0].copy()
+    reg_folds = pd.read_csv(DATA / 'cv' / 'regression_folds.csv')
+    rows += audit('regression', sick, reg_folds, sick.index.to_numpy())
+    report = pd.DataFrame(rows)
+    report.to_csv(OUT / 'fold_preprocessing_audit.csv', index=False, encoding='utf-8-sig')
+
+    X = train.iloc[:, 9:].apply(pd.to_numeric, errors='coerce')
+    q1, q3 = X.quantile(.25), X.quantile(.75)
+    mask = X.lt(q1 - 1.5 * (q3-q1)) | X.gt(q3 + 1.5 * (q3-q1))
+    summary = {
+        'n_training_rows': len(train), 'n_features': X.shape[1],
+        'missing_cells': int(X.isna().sum().sum()),
+        'infinite_cells': int(np.isinf(X.to_numpy()).sum()),
+        'constant_features': int((X.nunique() <= 1).sum()),
+        'potential_iqr_outlier_cells': int(mask.sum().sum()),
+        'test_set_read': False,
+        'policy': 'compare standard vs training-fold-only IQR clipping in later CV; never delete rows automatically'
+    }
+    (OUT / 'data_quality_summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(report.to_string(index=False))
+    print(json.dumps(summary, ensure_ascii=False))
+
+if __name__ == '__main__':
+    main()
+
+@@@END@@@
+@@@PATH@@@ src/autoencoder_cv.py
+from pathlib import Path
+import sys, random
+ROOT=Path(__file__).resolve().parents[1]; _v=ROOT/'vendor_torch'; sys.path.insert(0,str(_v)) if _v.exists() else None
+import numpy as np, pandas as pd, torch
+from torch import nn
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score,f1_score,recall_score,roc_auc_score,r2_score,mean_squared_error,mean_absolute_error
+
+DATA=ROOT/'data'; OUT=ROOT/'results'/'autoencoder_cv'; OUT.mkdir(parents=True,exist_ok=True)
+class AE(nn.Module):
+    def __init__(self,p):
+        super().__init__(); self.enc=nn.Sequential(nn.Linear(p,64),nn.ReLU(),nn.Linear(64,16),nn.ReLU(),nn.Linear(16,2)); self.dec=nn.Sequential(nn.Linear(2,16),nn.ReLU(),nn.Linear(16,64),nn.ReLU(),nn.Linear(64,p))
+    def forward(self,x): z=self.enc(x); return z,self.dec(z)
+def fit_encode(a,b,seed):
+    seed=int(seed); random.seed(seed); np.random.seed(seed); torch.manual_seed(seed); sc=StandardScaler().fit(a); ta=torch.tensor(sc.transform(a),dtype=torch.float32); tb=torch.tensor(sc.transform(b),dtype=torch.float32); m=AE(a.shape[1]); opt=torch.optim.Adam(m.parameters(),lr=.005); lossf=nn.MSELoss(); hist=[]
+    for _ in range(120): opt.zero_grad(); _,r=m(ta); loss=lossf(r,ta); loss.backward(); opt.step(); hist.append(float(loss.detach()))
+    m.eval();
+    with torch.no_grad(): za=m.enc(ta).numpy(); zb=m.enc(tb).numpy()
+    return za,zb,hist
+def main():
+    d=pd.read_csv(DATA/'splits'/'train.csv'); fs=d.columns[9:].tolist(); cf=pd.read_csv(DATA/'cv'/'classification_folds.csv'); y=d['Unnamed: 2'].astype(int).to_numpy(); rows=[]; losses=[]
+    for fold in sorted(cf.fold.unique()):
+        v=cf.fold.to_numpy()==fold; za,zv,h=fit_encode(d.loc[~v,fs].to_numpy(float),d.loc[v,fs].to_numpy(float),42+fold); losses += [{'task':'classification','fold':fold,'epoch':i+1,'loss':x} for i,x in enumerate(h)]
+        for name,m in [('LR',LogisticRegression(max_iter=2000,random_state=42)),('RF',RandomForestClassifier(n_estimators=300,random_state=42,n_jobs=-1))]:
+            m.fit(za,y[~v]); p=m.predict(zv); s=m.predict_proba(zv)[:,1]; rows.append({'task':'classification','representation':'autoencoder_2d','model':name,'fold':fold,'accuracy':accuracy_score(y[v],p),'f1':f1_score(y[v],p),'recall':recall_score(y[v],p),'roc_auc':roc_auc_score(y[v],s)})
+    sick=d[d.DI>0].copy(); rf=pd.read_csv(DATA/'cv'/'regression_folds.csv'); yr=sick.DI.to_numpy(float)
+    for fold in sorted(rf.fold.unique()):
+        v=rf.fold.to_numpy()==fold; za,zv,h=fit_encode(sick.loc[~v,fs].to_numpy(float),sick.loc[v,fs].to_numpy(float),142+fold); losses += [{'task':'regression','fold':fold,'epoch':i+1,'loss':x} for i,x in enumerate(h)]; m=RandomForestRegressor(n_estimators=300,random_state=42,n_jobs=-1); m.fit(za,yr[~v]); p=m.predict(zv); rows.append({'task':'regression','representation':'autoencoder_2d','model':'RF','fold':fold,'r2':r2_score(yr[v],p),'rmse':mean_squared_error(yr[v],p)**.5,'mae':mean_absolute_error(yr[v],p)})
+    res=pd.DataFrame(rows); res.to_csv(OUT/'per_fold_metrics.csv',index=False,encoding='utf-8-sig'); pd.DataFrame(losses).to_csv(OUT/'training_losses.csv',index=False,encoding='utf-8-sig'); print(res.groupby(['task','model']).mean(numeric_only=True).to_string())
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/build_stage_summary.py
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+ROOT=Path(__file__).resolve().parents[1]; R=ROOT/'results'; OUT=R/'stage_summary'; OUT.mkdir(parents=True,exist_ok=True)
+plt.rcParams['font.sans-serif']=['Arial Unicode MS','Microsoft YaHei','DejaVu Sans']; plt.rcParams['axes.unicode_minus']=False
+def main():
+    base=pd.read_csv(R/'traditional_baseline'/'summary_metrics.csv'); tune=pd.read_csv(R/'nested_tuning'/'summary.csv'); ae=pd.read_csv(R/'autoencoder_cv'/'per_fold_metrics.csv'); gnn=pd.read_csv(R/'gnn_inductive_cv'/'per_fold_metrics.csv'); deep=pd.read_csv(R/'nested_deep_tuning'/'summary.csv')
+    # classification overview
+    b=base[base.task=='classification'].copy(); t=tune[tune.task=='classification'].copy()
+    rows=[]
+    for _,x in b.iterrows(): rows.append({'family':'traditional baseline','label':x.feature_set+' | '+x.model,'accuracy':x.metric_1_mean,'f1':x.f1_mean,'recall':x.recall_mean,'roc_auc':x.roc_auc_mean,'std':x.metric_1_std})
+    for _,x in t.iterrows(): rows.append({'family':'nested tuned','label':'tuned '+x.model,'accuracy':x.accuracy_mean,'f1':x.f1_mean,'recall':x.recall_mean,'roc_auc':x.roc_auc_mean,'std':x.accuracy_std})
+    ad=ae[ae.task=='classification'].groupby('model').mean(numeric_only=True).reset_index(); gd=gnn[gnn.task=='classification'].groupby('model').mean(numeric_only=True).reset_index()
+    for _,x in ad.iterrows(): rows.append({'family':'autoencoder 2D','label':'AE 2D | '+x.model,'accuracy':x.accuracy,'f1':x.f1,'recall':x.recall,'roc_auc':x.roc_auc,'std':np.nan})
+    for _,x in gd.iterrows(): rows.append({'family':'inductive GNN 2D','label':'GNN 2D | '+x.model,'accuracy':x.accuracy,'f1':x.f1,'recall':x.recall,'roc_auc':x.roc_auc,'std':np.nan})
+    cls=pd.DataFrame(rows); cls.to_csv(OUT/'classification_master.csv',index=False,encoding='utf-8-sig')
+    plt.figure(figsize=(12,7)); s=cls.sort_values('roc_auc'); plt.barh(s.label,s.roc_auc,color=['#4c78a8' if f=='traditional baseline' else '#f58518' if f=='nested tuned' else '#54a24b' if f=='inductive GNN 2D' else '#b279a2' for f in s.family]); plt.xlabel('Mean ROC-AUC (training CV)'); plt.title('Classification methods: discrimination comparison'); plt.xlim(0,1); plt.grid(axis='x',alpha=.25); plt.tight_layout(); plt.savefig(OUT/'classification_roc_auc.png',dpi=180); plt.close()
+    plt.figure(figsize=(10,6)); x=np.arange(len(cls)); w=.2; 
+    for i,m in enumerate(['accuracy','f1','recall','roc_auc']): plt.bar(x+i*w,cls[m],w,label=m)
+    plt.xticks(x+1.5*w,cls.label,rotation=75,ha='right',fontsize=8); plt.ylabel('Mean score'); plt.title('Classification metric profile'); plt.ylim(0,1); plt.legend(); plt.tight_layout(); plt.savefig(OUT/'classification_metric_profile.png',dpi=180); plt.close()
+    # regression overview
+    rows=[]
+    for _,x in base[base.task=='regression'].iterrows(): rows.append({'family':'traditional baseline','label':x.feature_set+' | '+x.model,'r2':x.r2_mean,'rmse':x.rmse_mean,'mae':x.mae_mean,'std':x.r2_std})
+    for _,x in tune[tune.task=='regression'].iterrows(): rows.append({'family':'nested tuned','label':'tuned '+x.model,'r2':x.r2_mean,'rmse':x.rmse_mean,'mae':x.mae_mean,'std':x.r2_std})
+    ar=ae[ae.task=='regression'].groupby('model').mean(numeric_only=True).reset_index(); gr=gnn[gnn.task=='regression'].groupby('model').mean(numeric_only=True).reset_index()
+    for _,x in ar.iterrows(): rows.append({'family':'autoencoder 2D','label':'AE 2D | '+x.model,'r2':x.r2,'rmse':x.rmse,'mae':x.mae,'std':np.nan})
+    for _,x in gr.iterrows(): rows.append({'family':'inductive GNN 2D','label':'GNN 2D | '+x.model,'r2':x.r2,'rmse':x.rmse,'mae':x.mae,'std':np.nan})
+    reg=pd.DataFrame(rows); reg.to_csv(OUT/'regression_master.csv',index=False,encoding='utf-8-sig')
+    plt.figure(figsize=(12,7)); s=reg.sort_values('r2'); plt.barh(s.label,s.r2,color=['#4c78a8' if f=='traditional baseline' else '#f58518' if f=='nested tuned' else '#54a24b' if f=='inductive GNN 2D' else '#b279a2' for f in s.family]); plt.xlabel('Mean R² (training CV)'); plt.title('Regression methods: explained variance comparison'); plt.grid(axis='x',alpha=.25); plt.tight_layout(); plt.savefig(OUT/'regression_r2.png',dpi=180); plt.close()
+    plt.figure(figsize=(9,5)); plt.scatter(reg.rmse,reg.r2,s=70); 
+    for _,x in reg.iterrows(): plt.annotate(x.label,(x.rmse,x.r2),fontsize=7)
+    plt.xlabel('RMSE (lower is better)'); plt.ylabel('R² (higher is better)'); plt.title('Regression error–fit trade-off'); plt.grid(alpha=.25); plt.tight_layout(); plt.savefig(OUT/'regression_tradeoff.png',dpi=180); plt.close()
+    # fold variability of best traditional and deep
+    nt=pd.read_csv(R/'nested_tuning'/'outer_fold_results.csv'); nd=pd.read_csv(R/'nested_deep_tuning'/'outer_fold_results.csv');
+    plt.figure(figsize=(9,5));
+    for label,d in [('tuned RF classification',nt[(nt.task=='classification')&(nt.model=='RF')]),('deep tuned classification',nd[nd.task=='classification'])]: plt.plot(d.outer_fold,d.roc_auc,'o-',label=label)
+    plt.xlabel('Outer fold'); plt.ylabel('ROC-AUC'); plt.title('Fold-to-fold variability'); plt.xticks(range(5)); plt.legend(); plt.grid(alpha=.25); plt.tight_layout(); plt.savefig(OUT/'fold_variability_classification.png',dpi=180); plt.close()
+    report=f'''# 阶段性研究总结（第1–11步）\n\n## 当前状态\n\n本报告只使用训练集内部交叉验证结果；封存测试集未读取。结果用于探索方向，不是最终独立测试结论。\n\n## 一、数据与方法事实\n\n- 总样本165；训练132；测试33（测试集封存）。\n- 候选特征117。\n- 分类采用固定5折StratifiedKFold；回归仅用DI>0训练样本，采用固定5折KFold。\n- 预处理在每个训练折拟合；没有发现缺失值、无穷值或常量特征。\n\n## 二、分类结果\n\n当前探索中，传统RF嵌套优化的平均ROC-AUC最高（约0.863）；黄金双特征LR的Recall约0.867，具有最强的简洁性和解释性；归纳式GNN二维特征优于普通AutoEncoder，但尚未超过传统RF。\n\n### 解释\n\n- Boruta多特征保留了纹理和光谱互补信息，可能提升排序能力。\n- 黄金双特征可能已捕捉主要“有病/无病”边界，因此简单LR仍有很高Recall。\n- 不同折的成绩波动较大，说明样本量限制了结论稳定性。\n\n### 延伸猜想\n\n1. 分类信号是否主要来自少数光谱指数，而纹理特征只在部分样本上提供补充？\n2. 如果优化分类阈值而不是固定0.5，黄金双特征LR的Recall能否进一步提高？\n3. 是否存在按采样时期、地块或病害水平分层的性能差异？\n\n## 三、回归结果\n\nBoruta特征+RF及其嵌套优化版本目前最好，R²约0.445–0.449；共同6特征次之；黄金双特征约0.343；二维AutoEncoder约0.261；二维GNN约0.351。\n\n### 解释\n\n- 严重度预测需要比分类更多的细节，过度压缩到2维会损失连续梯度信息。\n- 全部117特征不一定最好，冗余和噪声可能损害小样本回归。\n- 回归折间R²波动较大，说明当前结果对样本组成敏感。\n\n### 延伸猜想\n\n1. DI是否具有分段机制：先分类，再对患病样本分级回归？\n2. 纹理特征是否主要解释病害严重度，而光谱指数主要解释是否患病？\n3. DI测量误差或标签分辨率是否已经成为R²上限？\n\n## 四、方法判断\n\n目前最适合保留的三条路线：\n\n- 可解释应用路线：黄金双特征+LR（分类）\n- 性能优先路线：Boruta特征+RF/SVM（分类与回归）\n- 空间创新路线：归纳式GNN，继续探索但暂不宣称领先\n\n## 五、下一阶段建议\n\n1. 完全嵌套特征选择：每个外层训练折内重新运行Boruta。\n2. 分类阈值分析：只在训练集内确定阈值，重点观察Recall、F1和校准。\n3. 回归分段/两阶段模型：分类后对DI>0建模。\n4. 误差诊断：分析高误差样本的特征、DI区间和采样条件。\n5. GNN敏感性分析：K=3/5/8、距离图与特征相似图对比。\n\n## 六、当前结论的证据等级\n\n- 直接支持：Boruta+RF在当前训练CV中是最强回归候选。\n- 合理推测：光谱指数更适合分类，纹理特征可能补充严重度信息。\n- 尚待验证：空间图是否在新地块或新时期上真正提升泛化。\n'''
+    (OUT/'stage_report.md').write_text(report,encoding='utf-8')
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/compare_selectors.py
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+
+ROOT = Path(__file__).resolve().parents[1]
+FS = ROOT / 'results' / 'feature_selection'; OUT = ROOT / 'results' / 'feature_selection'
+
+def main():
+    rf = pd.read_csv(FS / 'feature_stability.csv')
+    bo = pd.read_csv(FS / 'boruta_stability.csv')
+    sets = {
+        'RF+MI ≥3/5': set(rf.loc[rf.selection_rate >= .6, 'feature']),
+        'RF+MI ≥4/5': set(rf.loc[rf.selection_rate >= .8, 'feature']),
+        'RF+MI =5/5': set(rf.loc[rf.selection_rate >= 1.0, 'feature']),
+        'Boruta ≥3/5': set(bo.loc[bo.confirmed_rate >= .6, 'feature']),
+        'Boruta ≥4/5': set(bo.loc[bo.confirmed_rate >= .8, 'feature']),
+        'Boruta =5/5': set(bo.loc[bo.confirmed_rate >= 1.0, 'feature']),
+    }
+    rows=[]
+    for name,s in sets.items(): rows.append({'set':name,'n_features':len(s)})
+    pd.DataFrame(rows).to_csv(OUT/'selector_set_sizes.csv',index=False,encoding='utf-8-sig')
+    common = sorted(sets['RF+MI ≥3/5'] & sets['Boruta ≥3/5'])
+    only_rf = sorted(sets['RF+MI ≥3/5'] - sets['Boruta ≥3/5'])
+    only_bo = sorted(sets['Boruta ≥3/5'] - sets['RF+MI ≥3/5'])
+    pd.DataFrame({'category':['common_3of5','only_rf_mi_3of5','only_boruta_3of5'],'features':[', '.join(common),', '.join(only_rf),', '.join(only_bo)]}).to_csv(OUT/'selector_overlap.csv',index=False,encoding='utf-8-sig')
+    overlap_counts = [len(common), len(only_rf), len(only_bo)]
+    plt.figure(figsize=(7,5)); bars=plt.bar(['共同','仅 RF+MI','仅 Boruta'], overlap_counts, color=['#2ca02c','#1f77b4','#d62728']); plt.ylabel('特征数量'); plt.title('3/5 稳定性阈值下的选择器重叠'); plt.grid(axis='y',alpha=.3); [plt.text(b.get_x()+b.get_width()/2,b.get_height()+.2,str(int(b.get_height())),ha='center') for b in bars]; plt.tight_layout(); plt.savefig(OUT/'selector_overlap_counts.png',dpi=180); plt.close()
+    plt.figure(figsize=(9,5)); names=[r['set'] for r in rows]; vals=[r['n_features'] for r in rows]; bars=plt.bar(names,vals,color=['#1f77b4']*3+['#d62728']*3); plt.ylabel('Number of selected features'); plt.title('Selected feature count by method and stability threshold'); plt.xticks(rotation=25,ha='right'); plt.grid(axis='y',alpha=.3); plt.tight_layout(); plt.savefig(OUT/'selector_set_sizes.png',dpi=180); plt.close()
+    print('common',len(common),common); print('only_rf',len(only_rf),only_rf); print('only_boruta',len(only_bo),only_bo)
+
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/create_cv_folds.py
+from pathlib import Path
+import json
+import pandas as pd
+from sklearn.model_selection import StratifiedKFold, KFold
+
+ROOT = Path(__file__).resolve().parents[1]
+SPLIT_DIR = ROOT / 'data' / 'splits'
+OUT_DIR = ROOT / 'data' / 'cv'
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    train = pd.read_csv(SPLIT_DIR / 'train.csv')
+    y_cls = train['Unnamed: 2'].astype(int).to_numpy()
+
+    # Classification: same fixed stratified folds for every classifier.
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cls = pd.DataFrame({'row_index': train.index, 'fold': -1})
+    for fold, (_, valid_idx) in enumerate(skf.split(train, y_cls)):
+        cls.loc[valid_idx, 'fold'] = fold
+    cls['label'] = y_cls
+    cls.to_csv(OUT_DIR / 'classification_folds.csv', index=False)
+
+    # Regression: rows are independent, so use ordinary fixed KFold.
+    sick = train[train['DI'] > 0].copy()
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    reg = pd.DataFrame({'row_index': sick.index, 'fold': -1})
+    for fold, (_, valid_idx) in enumerate(kf.split(sick)):
+        reg.loc[valid_idx, 'fold'] = fold
+    reg['DI'] = sick['DI'].to_numpy()
+    reg.to_csv(OUT_DIR / 'regression_folds.csv', index=False)
+
+    meta = {
+        'random_state': 42,
+        'n_splits': 5,
+        'classification': {'method': 'StratifiedKFold', 'shuffle': True, 'fold_file': 'classification_folds.csv'},
+        'regression': {'method': 'KFold', 'shuffle': True, 'fold_file': 'regression_folds.csv', 'filtered_condition': 'DI > 0'},
+        'all_candidates_must_reuse_these_assignments': True,
+    }
+    (OUT_DIR / 'cv_metadata.json').write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f'classification rows={len(cls)}, folds={sorted(cls.fold.unique())}')
+    print(f'regression rows={len(reg)}, folds={sorted(reg.fold.unique())}')
+
+if __name__ == '__main__':
+    main()
+
+@@@END@@@
+@@@PATH@@@ src/create_split.py
+from pathlib import Path
+import json
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+ROOT = Path(__file__).resolve().parents[1]
+RAW = ROOT / 'data' / 'raw' / 'Wheat_Scab_Features_Extraction_Ordered_region.csv'
+OUT = ROOT / 'data' / 'splits'
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(RAW, encoding='gbk')
+    all_idx = df.index.to_numpy()
+    train_idx, test_idx = train_test_split(all_idx, test_size=0.20, random_state=42, stratify=df['Unnamed: 2'])
+    train = df.iloc[train_idx].copy()
+    test = df.iloc[test_idx].copy()
+    train.to_csv(OUT / 'train.csv', index=False, encoding='utf-8-sig')
+    test.to_csv(OUT / 'test_locked.csv', index=False, encoding='utf-8-sig')
+    pd.DataFrame({'row_index': train_idx, 'split': 'train'}).to_csv(OUT / 'train_indices.csv', index=False)
+    pd.DataFrame({'row_index': test_idx, 'split': 'test_locked'}).to_csv(OUT / 'test_indices_locked.csv', index=False)
+    meta = {'random_state': 42, 'test_size': 0.20, 'split_method': 'train_test_split(stratify=Unnamed: 2)', 'independence_assumption': 'each row is an independent unique object', 'n_total': len(df), 'n_train': len(train), 'n_test': len(test)}
+    (OUT / 'split_metadata.json').write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(json.dumps({k: meta[k] for k in ['n_total','n_train','n_test','split_method']}, ensure_ascii=False))
+
+if __name__ == '__main__':
+    main()
+
+@@@END@@@
+@@@PATH@@@ src/evaluate_feature_sets_cv.py
+from pathlib import Path
+import json
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.base import clone
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / 'data'; FS = ROOT / 'results' / 'feature_selection'; OUT = ROOT / 'results' / 'feature_set_cv'
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(DATA / 'splits' / 'train.csv')
+    folds = pd.read_csv(DATA / 'cv' / 'classification_folds.csv')
+    all_features = df.columns[9:].tolist(); y = df['Unnamed: 2'].astype(int).to_numpy()
+    stability = pd.read_csv(FS / 'feature_stability.csv')
+    boruta = pd.read_csv(FS / 'boruta_stability.csv')
+    sets = {
+        'all_117': all_features,
+        'current_2': [f for f in ['NREDI1','NDVIre2'] if f in all_features],
+        'stable_rf_mi_3of5': stability.loc[stability.selection_rate >= .6, 'feature'].tolist(),
+        'stable_rf_mi_4of5': stability.loc[stability.selection_rate >= .8, 'feature'].tolist(),
+        'stable_rf_mi_5of5': stability.loc[stability.selection_rate >= 1.0, 'feature'].tolist(),
+        'boruta_confirmed_3of5': boruta.loc[boruta.confirmed_rate >= .6, 'feature'].tolist(),
+        'boruta_confirmed_4of5': boruta.loc[boruta.confirmed_rate >= .8, 'feature'].tolist(),
+        'boruta_confirmed_5of5': boruta.loc[boruta.confirmed_rate >= 1.0, 'feature'].tolist(),
+    }
+    models = {
+        'logistic_regression': Pipeline([('scaler', StandardScaler()), ('model', LogisticRegression(max_iter=2000, random_state=42))]),
+        'svm_rbf': Pipeline([('scaler', StandardScaler()), ('model', SVC(kernel='rbf', probability=True, random_state=42))]),
+        'random_forest': RandomForestClassifier(n_estimators=300, random_state=42, n_jobs=-1, class_weight='balanced'),
+    }
+    rows=[]
+    for set_name, features in sets.items():
+        X = df[features].to_numpy(float)
+        for model_name, base in models.items():
+            for fold in sorted(folds.fold.unique()):
+                valid = folds.fold.to_numpy() == fold
+                model = clone(base); model.fit(X[~valid], y[~valid])
+                pred = model.predict(X[valid])
+                score = model.predict_proba(X[valid])[:,1] if hasattr(model,'predict_proba') else model.decision_function(X[valid])
+                rows.append({'feature_set':set_name,'model':model_name,'fold':int(fold),'n_features':len(features),'accuracy':accuracy_score(y[valid],pred),'f1':f1_score(y[valid],pred,zero_division=0),'recall':recall_score(y[valid],pred,zero_division=0),'roc_auc':roc_auc_score(y[valid],score)})
+    result=pd.DataFrame(rows); result.to_csv(OUT/'per_fold_metrics.csv',index=False,encoding='utf-8-sig')
+    summary=result.groupby(['feature_set','model'],as_index=False).agg(n_features=('n_features','first'),accuracy_mean=('accuracy','mean'),accuracy_std=('accuracy','std'),f1_mean=('f1','mean'),recall_mean=('recall','mean'),roc_auc_mean=('roc_auc','mean')).sort_values('roc_auc_mean',ascending=False)
+    summary.to_csv(OUT/'summary_metrics.csv',index=False,encoding='utf-8-sig')
+    plt.figure(figsize=(11,6));
+    for model in summary.model.unique():
+        s=summary[summary.model==model]; plt.plot(s.roc_auc_mean, s.feature_set, 'o-', label=model)
+    plt.xlabel('Mean ROC-AUC across fixed folds'); plt.ylabel('Feature set'); plt.title('Feature-set comparison under identical CV folds'); plt.grid(axis='x',alpha=.3); plt.legend(); plt.tight_layout(); plt.savefig(OUT/'feature_set_comparison.png',dpi=180); plt.close()
+    print(summary.head(10).to_string(index=False))
+
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/feature_selection_cv.py
+from pathlib import Path
+import sys
+import json
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+ROOT = Path(__file__).resolve().parents[1]
+_v = ROOT / 'vendor'; sys.path.insert(0, str(_v)) if _v.exists() else None
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.preprocessing import StandardScaler
+from boruta import BorutaPy
+
+DATA = ROOT / 'data'
+OUT = ROOT / 'results' / 'feature_selection'
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    train = pd.read_csv(DATA / 'splits' / 'train.csv')
+    folds = pd.read_csv(DATA / 'cv' / 'classification_folds.csv')
+    names = train.columns[9:].tolist()
+    X = train[names].to_numpy(float)
+    y = train['Unnamed: 2'].astype(int).to_numpy()
+    records = []
+    importance_rows = []
+    boruta_rows = []
+    top_k = 20
+    for fold in sorted(folds.fold.unique()):
+        valid = folds.fold.to_numpy() == fold
+        Xtr, ytr = X[~valid], y[~valid]
+        scaler = StandardScaler().fit(Xtr)
+        Xtr_s = scaler.transform(Xtr)
+        rf = RandomForestClassifier(n_estimators=300, random_state=42 + int(fold), n_jobs=-1, class_weight='balanced')
+        rf.fit(Xtr_s, ytr)
+        boruta_rf = RandomForestClassifier(n_estimators=200, random_state=100 + int(fold), n_jobs=-1, class_weight='balanced', max_depth=6)
+        boruta = BorutaPy(boruta_rf, n_estimators='auto', max_iter=30, perc=80, random_state=100 + int(fold), verbose=0)
+        boruta.fit(Xtr_s, ytr)
+        mi = mutual_info_classif(Xtr_s, ytr, random_state=42 + int(fold))
+        rf_rank = np.argsort(rf.feature_importances_)[::-1]
+        mi_rank = np.argsort(mi)[::-1]
+        selected = sorted(set(rf_rank[:top_k]).intersection(mi_rank[:top_k]))
+        if len(selected) < 5:
+            selected = list(rf_rank[:top_k])
+        for rank, idx in enumerate(rf_rank, 1):
+            importance_rows.append({'fold': int(fold), 'feature': names[idx], 'rf_importance': rf.feature_importances_[idx], 'mi_score': mi[idx], 'rf_rank': rank, 'selected': names[idx] in [names[i] for i in selected]})
+        for idx in selected:
+            records.append({'fold': int(fold), 'feature': names[idx], 'selection_rule': 'RF_top20_intersect_MI_top20'})
+        for idx, name in enumerate(names):
+            boruta_rows.append({'fold': int(fold), 'feature': name, 'boruta_confirmed': bool(boruta.support_[idx]), 'boruta_tentative': bool(boruta.support_weak_[idx]), 'boruta_rank': int(boruta.ranking_[idx])})
+    selections = pd.DataFrame(records)
+    importance = pd.DataFrame(importance_rows)
+    boruta_df = pd.DataFrame(boruta_rows)
+    selections.to_csv(OUT / 'fold_selected_features.csv', index=False, encoding='utf-8-sig')
+    importance.to_csv(OUT / 'fold_feature_importance.csv', index=False, encoding='utf-8-sig')
+    boruta_df.to_csv(OUT / 'boruta_fold_results.csv', index=False, encoding='utf-8-sig')
+    boruta_stability = boruta_df.groupby('feature').agg(confirmed_folds=('boruta_confirmed','sum'), tentative_folds=('boruta_tentative','sum')).reset_index()
+    boruta_stability['confirmed_rate'] = boruta_stability.confirmed_folds / folds.fold.nunique()
+    boruta_stability['tentative_or_confirmed_rate'] = (boruta_stability.confirmed_folds + boruta_stability.tentative_folds) / folds.fold.nunique()
+    boruta_stability.sort_values(['confirmed_folds','tentative_folds','feature'], ascending=[False,False,True]).to_csv(OUT / 'boruta_stability.csv', index=False, encoding='utf-8-sig')
+    stability = selections.groupby('feature').agg(folds_selected=('fold','nunique')).reset_index()
+    stability['selection_rate'] = stability.folds_selected / folds.fold.nunique()
+    stability = stability.sort_values(['folds_selected','feature'], ascending=[False,True])
+    stability.to_csv(OUT / 'feature_stability.csv', index=False, encoding='utf-8-sig')
+    summary = {'method': 'training-fold-only RF+mutual-information and Boruta', 'n_folds': int(folds.fold.nunique()), 'top_k_each_method': top_k, 'boruta_max_iter': 30, 'boruta_perc': 80, 'test_set_used': False, 'note': 'Exploratory selectors; final selector will be compared by nested CV.'}
+    (OUT / 'selection_metadata.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
+    plt.figure(figsize=(10, 6))
+    top = stability.head(20).sort_values('selection_rate')
+    plt.barh(top.feature, top.selection_rate, color='#2ca02c')
+    plt.xlabel('Selection rate across 5 training folds')
+    plt.ylabel('Feature')
+    plt.title('Feature stability (RF + mutual information)')
+    plt.xlim(0, 1.05); plt.grid(axis='x', alpha=.3); plt.tight_layout()
+    plt.savefig(OUT / 'feature_stability.png', dpi=180); plt.close()
+    counts = selections.groupby('fold').size()
+    plt.figure(figsize=(7,4)); plt.bar(counts.index.astype(str), counts.values, color='#1f77b4')
+    plt.xlabel('Validation fold'); plt.ylabel('Selected feature count'); plt.title('Selected features per fold'); plt.tight_layout()
+    plt.savefig(OUT / 'selected_count_by_fold.png', dpi=180); plt.close()
+    print(stability.head(10).to_string(index=False)); print('counts', counts.to_dict()); print('Boruta confirmed stability:'); print(boruta_stability.sort_values(['confirmed_folds','tentative_folds'], ascending=False).head(10).to_string(index=False))
+
+if __name__ == '__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/gnn_inductive_cv.py
+from pathlib import Path
+import sys, random
+ROOT=Path(__file__).resolve().parents[1]; _v=ROOT/'vendor_torch'; sys.path.insert(0,str(_v)) if _v.exists() else None
+import numpy as np, pandas as pd, torch
+from torch import nn
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import NearestNeighbors
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score,f1_score,recall_score,roc_auc_score,r2_score,mean_squared_error,mean_absolute_error
+
+DATA=ROOT/'data'; OUT=ROOT/'results'/'gnn_inductive_cv'; OUT.mkdir(parents=True,exist_ok=True); K=5
+class SageAE(nn.Module):
+    def __init__(self,p):
+        super().__init__(); self.s1=nn.Linear(p,32); self.n1=nn.Linear(p,32); self.s2=nn.Linear(32,2); self.n2=nn.Linear(32,2); self.dec=nn.Sequential(nn.Linear(2,32),nn.ReLU(),nn.Linear(32,p))
+    def encode(self,x,a): h=torch.relu(self.s1(x)+self.n1(a@x)); return self.s2(h)+self.n2(a@h),h
+    def forward(self,x,a): z,h=self.encode(x,a); return z,self.dec(z),h
+def adjacency(coords,k=K):
+    n=len(coords); kk=min(k+1,n); ind=NearestNeighbors(n_neighbors=kk).fit(coords).kneighbors(return_distance=False); a=np.zeros((n,n),np.float32)
+    for i,js in enumerate(ind):
+        js=[j for j in js if j!=i][:k]; a[i,js]=1/len(js) if js else 0
+    return a
+def fit_encode(xtr,xv,ctr,cv,seed):
+    seed=int(seed); random.seed(seed); np.random.seed(seed); torch.manual_seed(seed); sc=StandardScaler().fit(xtr); xt=torch.tensor(sc.transform(xtr),dtype=torch.float32); xv_t=torch.tensor(sc.transform(xv),dtype=torch.float32); A=torch.tensor(adjacency(ctr),dtype=torch.float32); m=SageAE(xtr.shape[1]); opt=torch.optim.Adam(m.parameters(),lr=.005,weight_decay=5e-4); lossf=nn.MSELoss(); hist=[]
+    for _ in range(150): opt.zero_grad(); z,r,h=m(xt,A); loss=lossf(r,xt); loss.backward(); opt.step(); hist.append(float(loss.detach()))
+    m.eval()
+    with torch.no_grad():
+        ztr,htr=m.encode(xt,A); nbr=NearestNeighbors(n_neighbors=min(K,len(ctr))).fit(ctr); ids=nbr.kneighbors(cv,return_distance=False); rawagg=torch.stack([xt[j].mean(0) for j in ids]); hv=torch.relu(m.s1(xv_t)+m.n1(rawagg)); hagg=torch.stack([htr[j].mean(0) for j in ids]); zv=m.s2(hv)+m.n2(hagg)
+    return ztr.numpy(),zv.numpy(),hist,A.numpy()
+def task_run(task,d,folds,seed0):
+    fs=d.columns[9:].tolist(); y=(d['Unnamed: 2'].astype(int) if task=='classification' else d.DI).to_numpy(); coords=d[['O_Lat','O_Lng']].to_numpy(float); rows=[]; graphs=[]; losses=[]
+    for fold in sorted(folds.fold.unique()):
+        v=folds.fold.to_numpy()==fold; zt,zv,h,A=fit_encode(d.loc[~v,fs].to_numpy(float),d.loc[v,fs].to_numpy(float),coords[~v],coords[v],seed0+fold); graphs.append({'task':task,'fold':fold,'train_nodes':int((~v).sum()),'valid_nodes':int(v.sum()),'k':K,'train_edges':int((A>0).sum()),'mean_neighbors':float((A>0).sum(1).mean()),'isolated_nodes':int(((A>0).sum(1)==0).sum())}); losses += [{'task':task,'fold':fold,'epoch':i+1,'loss':x} for i,x in enumerate(h)]
+        models=[('LR',LogisticRegression(max_iter=2000,random_state=42)),('RF',RandomForestClassifier(n_estimators=300,random_state=42,n_jobs=-1))] if task=='classification' else [('RF',RandomForestRegressor(n_estimators=300,random_state=42,n_jobs=-1))]
+        for name,m in models:
+            m.fit(zt,y[~v]); p=m.predict(zv); row={'task':task,'model':name,'fold':fold}
+            if task=='classification': s=m.predict_proba(zv)[:,1]; row.update(accuracy=accuracy_score(y[v],p),f1=f1_score(y[v],p,zero_division=0),recall=recall_score(y[v],p,zero_division=0),roc_auc=roc_auc_score(y[v],s))
+            else: row.update(r2=r2_score(y[v],p),rmse=mean_squared_error(y[v],p)**.5,mae=mean_absolute_error(y[v],p))
+            rows.append(row)
+    return rows,graphs,losses
+def main():
+    tr=pd.read_csv(DATA/'splits'/'train.csv'); rows,g,l=task_run('classification',tr,pd.read_csv(DATA/'cv'/'classification_folds.csv'),242); sick=tr[tr.DI>0].copy(); a,b,c=task_run('regression',sick,pd.read_csv(DATA/'cv'/'regression_folds.csv'),342); rows+=a;g+=b;l+=c
+    r=pd.DataFrame(rows); r.to_csv(OUT/'per_fold_metrics.csv',index=False,encoding='utf-8-sig'); pd.DataFrame(g).to_csv(OUT/'graph_audit.csv',index=False,encoding='utf-8-sig'); pd.DataFrame(l).to_csv(OUT/'training_losses.csv',index=False,encoding='utf-8-sig'); print(r.groupby(['task','model']).mean(numeric_only=True).to_string()); print(pd.DataFrame(g).groupby('task').mean(numeric_only=True).to_string())
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/nested_deep_tuning.py
+from pathlib import Path
+import sys,time,json,random
+ROOT=Path(__file__).resolve().parents[1]; _v=ROOT/'vendor_torch'; sys.path.insert(0,str(_v)) if _v.exists() else None
+import numpy as np,pandas as pd,torch
+from torch import nn
+from sklearn.model_selection import StratifiedKFold,KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import NearestNeighbors
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import roc_auc_score,accuracy_score,f1_score,recall_score,r2_score,mean_squared_error,mean_absolute_error
+
+DATA=ROOT/'data'; OUT=ROOT/'results'/'nested_deep_tuning'; OUT.mkdir(parents=True,exist_ok=True)
+class Net(nn.Module):
+ def __init__(self,p,z,graph=False):
+  super().__init__(); self.graph=graph; self.a=nn.Linear(p,32); self.b=nn.Linear(p,32) if graph else None; self.z=nn.Linear(32,z); self.nz=nn.Linear(32,z) if graph else None; self.dec=nn.Sequential(nn.Linear(z,32),nn.ReLU(),nn.Linear(32,p))
+ def encode(self,x,A=None):
+  h=torch.relu(self.a(x)+(self.b(A@x) if self.graph else 0)); return self.z(h)+(self.nz(A@h) if self.graph else 0),h
+ def forward(self,x,A=None): z,h=self.encode(x,A); return z,self.dec(z),h
+def adj(c,k):
+ ids=NearestNeighbors(n_neighbors=min(k+1,len(c))).fit(c).kneighbors(return_distance=False); A=np.zeros((len(c),len(c)),np.float32)
+ for i,js in enumerate(ids):
+  js=[j for j in js if j!=i][:k]; A[i,js]=1/len(js) if js else 0
+ return A
+def encode(xa,xb,ca,cb,kind,zdim,k,epochs,seed):
+ seed=int(seed); random.seed(seed);np.random.seed(seed);torch.manual_seed(seed);sc=StandardScaler().fit(xa);a=torch.tensor(sc.transform(xa),dtype=torch.float32);b=torch.tensor(sc.transform(xb),dtype=torch.float32); graph=kind=='gnn'; A=torch.tensor(adj(ca,k),dtype=torch.float32) if graph else None;m=Net(xa.shape[1],zdim,graph);o=torch.optim.Adam(m.parameters(),lr=.005,weight_decay=5e-4);lf=nn.MSELoss()
+ for _ in range(epochs): o.zero_grad();_,r,_=m(a,A);loss=lf(r,a);loss.backward();o.step()
+ m.eval()
+ with torch.no_grad():
+  za,ha=m.encode(a,A)
+  if not graph: zb,_=m.encode(b)
+  else:
+   ids=NearestNeighbors(n_neighbors=min(k,len(ca))).fit(ca).kneighbors(cb,return_distance=False); raw=torch.stack([a[j].mean(0) for j in ids]);hb=torch.relu(m.a(b)+m.b(raw));agg=torch.stack([ha[j].mean(0) for j in ids]);zb=m.z(hb)+m.nz(agg)
+ return za.numpy(),zb.numpy()
+def score(task,zt,zv,yt,yv):
+ if task=='classification': m=LogisticRegression(max_iter=2000,random_state=42);m.fit(zt,yt);return roc_auc_score(yv,m.predict_proba(zv)[:,1])
+ m=RandomForestRegressor(n_estimators=200,random_state=42,n_jobs=-1);m.fit(zt,yt);return -mean_squared_error(yv,m.predict(zv))**.5
+def run(task,d,folds):
+ fs=d.columns[9:].tolist();X=d[fs].to_numpy(float);c=d[['O_Lat','O_Lng']].to_numpy(float);y=(d['Unnamed: 2'].astype(int) if task=='classification' else d.DI).to_numpy();rows=[]; configs=[('ae',z,0,e) for z in [2,4,8] for e in [80,150]]+[('gnn',z,k,120) for z in [2,4,8] for k in [3,5,8]]
+ for outer in sorted(folds.fold.unique()):
+  st=time.time();ov=folds.fold.to_numpy()==outer;Xi,yi,ci=X[~ov],y[~ov],c[~ov]; inner=StratifiedKFold(3,shuffle=True,random_state=500+int(outer)) if task=='classification' else KFold(3,shuffle=True,random_state=500+int(outer)); trials=[]
+  for kind,z,k,e in configs:
+   ss=[]
+   for j,(a,b) in enumerate(inner.split(Xi,yi if task=='classification' else None)): za,zb=encode(Xi[a],Xi[b],ci[a],ci[b],kind,z,k,e,700+outer*100+j);ss.append(score(task,za,zb,yi[a],yi[b]))
+   trials.append((np.mean(ss),kind,z,k,e))
+  ins,kind,z,k,e=max(trials);zt,zv=encode(X[~ov],X[ov],c[~ov],c[ov],kind,z,k,e,900+outer); row={'task':task,'outer_fold':int(outer),'kind':kind,'encoding_dim':z,'k':k,'epochs':e,'inner_score':ins,'seconds':time.time()-st}
+  if task=='classification':m=LogisticRegression(max_iter=2000,random_state=42);m.fit(zt,y[~ov]);p=m.predict(zv);s=m.predict_proba(zv)[:,1];row.update(accuracy=accuracy_score(y[ov],p),f1=f1_score(y[ov],p,zero_division=0),recall=recall_score(y[ov],p,zero_division=0),roc_auc=roc_auc_score(y[ov],s))
+  else:m=RandomForestRegressor(n_estimators=300,random_state=42,n_jobs=-1);m.fit(zt,y[~ov]);p=m.predict(zv);row.update(r2=r2_score(y[ov],p),rmse=mean_squared_error(y[ov],p)**.5,mae=mean_absolute_error(y[ov],p))
+  rows.append(row);print(row)
+ return rows
+def main():
+ tr=pd.read_csv(DATA/'splits'/'train.csv');rows=run('classification',tr,pd.read_csv(DATA/'cv'/'classification_folds.csv'));s=tr[tr.DI>0].copy();rows+=run('regression',s,pd.read_csv(DATA/'cv'/'regression_folds.csv'));r=pd.DataFrame(rows);r.to_csv(OUT/'outer_fold_results.csv',index=False,encoding='utf-8-sig');sm=r.groupby('task',as_index=False).agg(accuracy_mean=('accuracy','mean'),f1_mean=('f1','mean'),recall_mean=('recall','mean'),roc_auc_mean=('roc_auc','mean'),roc_auc_std=('roc_auc','std'),r2_mean=('r2','mean'),r2_std=('r2','std'),rmse_mean=('rmse','mean'),mae_mean=('mae','mean'),seconds=('seconds','sum'));sm.to_csv(OUT/'summary.csv',index=False,encoding='utf-8-sig');print(sm.to_string(index=False))
+if __name__=='__main__':main()
+
+@@@END@@@
+@@@PATH@@@ src/nested_traditional_tuning.py
+from pathlib import Path
+import json, time
+import numpy as np
+import pandas as pd
+from sklearn.base import clone
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC, SVR
+from preprocessing import build_preprocessor
+
+ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; RES=ROOT/'results'; OUT=RES/'nested_tuning'; OUT.mkdir(parents=True,exist_ok=True)
+
+def sets(df):
+    bo=pd.read_csv(RES/'feature_selection'/'boruta_stability.csv')
+    return {'golden_2':['NREDI1','NDVIre2'],'common_6':['B8_HOM','B8_MEA','NDVIre2','NDVIre3','NREDI1','NREDI2'],'boruta_3of5':bo.loc[bo.confirmed_rate>=.6,'feature'].tolist()}
+
+def candidates(task):
+    if task=='classification': return {
+      'LR':(LogisticRegression(max_iter=3000,random_state=42),{'model__C':[.01,.1,1,10]}),
+      'SVM':(SVC(probability=True,random_state=42),[{'model__kernel':['rbf'],'model__C':[.1,1,10],'model__gamma':[.01,.1,'scale']},{'model__kernel':['linear'],'model__C':[.1,1,10]}]),
+      'RF':(RandomForestClassifier(random_state=42,n_jobs=-1,class_weight='balanced'),{'model__n_estimators':[200,400],'model__max_depth':[None,6],'model__min_samples_leaf':[1,3],'model__max_features':['sqrt',.5]})}
+    return {
+      'Ridge':(Ridge(),{'model__alpha':[.1,1,10,100]}),
+      'SVR':(SVR(),{'model__C':[.1,1,10],'model__gamma':[.01,.1,'scale'],'model__epsilon':[.1,2]}),
+      'RF':(RandomForestRegressor(random_state=42,n_jobs=-1),{'model__n_estimators':[200,400],'model__max_depth':[None,6],'model__min_samples_leaf':[1,3],'model__max_features':['sqrt',.5]})}
+
+def run_task(task,df,folds,feature_sets):
+    y=(df['Unnamed: 2'].astype(int) if task=='classification' else df.DI).to_numpy(); rows=[]
+    for outer in sorted(folds.fold.unique()):
+      start=time.time(); valid=folds.fold.to_numpy()==outer; best_by_model={}
+      for model_name,(est,grid) in candidates(task).items():
+        trials=[]
+        for fs_name,fs in feature_sets.items():
+          X=df[fs].to_numpy(float)
+          for clip in [False,True]:
+            pipe=Pipeline([('prep',build_preprocessor(clip)),('model',clone(est))])
+            inner=StratifiedKFold(3,shuffle=True,random_state=100+int(outer)) if task=='classification' else KFold(3,shuffle=True,random_state=100+int(outer))
+            search=GridSearchCV(pipe,grid,cv=inner,scoring='roc_auc' if task=='classification' else 'neg_root_mean_squared_error',n_jobs=-1)
+            search.fit(X[~valid],y[~valid]); trials.append((search.best_score_,fs_name,fs,clip,search.best_estimator_,search.best_params_))
+        score,fs_name,fs,clip,best,params=max(trials,key=lambda z:z[0]); X=df[fs].to_numpy(float); pred=best.predict(X[valid]); row={'task':task,'outer_fold':int(outer),'model':model_name,'feature_set':fs_name,'n_features':len(fs),'iqr_clip':clip,'inner_best_score':score,'best_params':json.dumps(params,ensure_ascii=False),'seconds':time.time()-start}
+        if task=='classification':
+          prob=best.predict_proba(X[valid])[:,1]; row.update(accuracy=accuracy_score(y[valid],pred),f1=f1_score(y[valid],pred,zero_division=0),recall=recall_score(y[valid],pred,zero_division=0),roc_auc=roc_auc_score(y[valid],prob))
+        else: row.update(r2=r2_score(y[valid],pred),rmse=mean_squared_error(y[valid],pred)**.5,mae=mean_absolute_error(y[valid],pred))
+        rows.append(row); print(task,outer,model_name,fs_name,'clip',clip)
+    return rows
+
+def main():
+    train=pd.read_csv(DATA/'splits'/'train.csv'); fs=sets(train)
+    rows=run_task('classification',train,pd.read_csv(DATA/'cv'/'classification_folds.csv'),fs)
+    sick=train[train.DI>0].copy(); rows+=run_task('regression',sick,pd.read_csv(DATA/'cv'/'regression_folds.csv'),fs)
+    out=pd.DataFrame(rows); out.to_csv(OUT/'outer_fold_results.csv',index=False,encoding='utf-8-sig')
+    summary=out.groupby(['task','model'],as_index=False).agg(accuracy_mean=('accuracy','mean'),accuracy_std=('accuracy','std'),f1_mean=('f1','mean'),recall_mean=('recall','mean'),roc_auc_mean=('roc_auc','mean'),roc_auc_std=('roc_auc','std'),r2_mean=('r2','mean'),r2_std=('r2','std'),rmse_mean=('rmse','mean'),mae_mean=('mae','mean'),seconds_total=('seconds','sum')); summary.to_csv(OUT/'summary.csv',index=False,encoding='utf-8-sig'); print(summary.to_string(index=False))
+if __name__=='__main__': main()
+
+@@@END@@@
+@@@PATH@@@ src/preprocessing.py
+"""Leakage-safe preprocessing shared by all later experiments."""
+import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+
+class IQRClipper(BaseEstimator, TransformerMixin):
+    """Learn per-feature clipping bounds from training data only."""
+    def __init__(self, factor=1.5):
+        self.factor = factor
+
+    def fit(self, X, y=None):
+        X = np.asarray(X, dtype=float)
+        q1 = np.nanquantile(X, 0.25, axis=0)
+        q3 = np.nanquantile(X, 0.75, axis=0)
+        iqr = q3 - q1
+        self.lower_bounds_ = q1 - self.factor * iqr
+        self.upper_bounds_ = q3 + self.factor * iqr
+        return self
+
+    def transform(self, X):
+        return np.clip(np.asarray(X, dtype=float), self.lower_bounds_, self.upper_bounds_)
+
+
+def build_preprocessor(clip_outliers=False):
+    """Return an unfitted pipeline; it must be fitted inside each training fold."""
+    steps = [('imputer', SimpleImputer(strategy='median'))]
+    if clip_outliers:
+        steps.append(('iqr_clipper', IQRClipper(factor=1.5)))
+    steps.append(('scaler', StandardScaler()))
+    return Pipeline(steps)
+
+@@@END@@@
+@@@PATH@@@ src/traditional_baseline_cv.py
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.base import clone
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score, r2_score, mean_squared_error, mean_absolute_error
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC, SVR
+
+ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; FS=ROOT/'results'/'feature_selection'; OUT=ROOT/'results'/'traditional_baseline'; OUT.mkdir(parents=True,exist_ok=True)
+
+def feature_sets(df):
+    names=df.columns[9:].tolist(); rf=pd.read_csv(FS/'feature_stability.csv'); bo=pd.read_csv(FS/'boruta_stability.csv')
+    return {'all_117':names,'current_2':[f for f in ['NREDI1','NDVIre2'] if f in names],'common_6':['B8_HOM','B8_MEA','NDVIre2','NDVIre3','NREDI1','NREDI2'],'boruta_3of5':bo.loc[bo.confirmed_rate>=.6,'feature'].tolist()}
+
+def main():
+    df=pd.read_csv(DATA/'splits'/'train.csv'); sets=feature_sets(df); cls=pd.read_csv(DATA/'cv'/'classification_folds.csv'); y=df['Unnamed: 2'].astype(int).to_numpy(); cr=[]
+    models={'LR':Pipeline([('scaler',StandardScaler()),('model',LogisticRegression(max_iter=2000,random_state=42))]),'SVM':Pipeline([('scaler',StandardScaler()),('model',SVC(kernel='rbf',probability=True,random_state=42))]),'RF':RandomForestClassifier(n_estimators=300,random_state=42,n_jobs=-1,class_weight='balanced')}
+    for sn,fs in sets.items():
+        X=df[fs].to_numpy(float)
+        for mn,base in models.items():
+            for fold in sorted(cls.fold.unique()):
+                v=cls.fold.to_numpy()==fold; m=clone(base); m.fit(X[~v],y[~v]); pred=m.predict(X[v]); prob=m.predict_proba(X[v])[:,1] if hasattr(m,'predict_proba') else m.decision_function(X[v]); cr.append({'task':'classification','feature_set':sn,'model':mn,'fold':int(fold),'n_features':len(fs),'accuracy':accuracy_score(y[v],pred),'f1':f1_score(y[v],pred,zero_division=0),'recall':recall_score(y[v],pred,zero_division=0),'roc_auc':roc_auc_score(y[v],prob)})
+    sick=df[df.DI>0].copy(); rg=pd.read_csv(DATA/'cv'/'regression_folds.csv'); rr=[]; yr=sick.DI.to_numpy(float)
+    rmodels={'Ridge':Pipeline([('scaler',StandardScaler()),('model',Ridge(alpha=1.0))]),'SVR':Pipeline([('scaler',StandardScaler()),('model',SVR(C=1.0))]),'RF':RandomForestRegressor(n_estimators=300,random_state=42,n_jobs=-1)}
+    for sn,fs in sets.items():
+        X=sick[fs].to_numpy(float)
+        for mn,base in rmodels.items():
+            for fold in sorted(rg.fold.unique()):
+                v=rg.fold.to_numpy()==fold; m=clone(base); m.fit(X[~v],yr[~v]); pred=m.predict(X[v]); rr.append({'task':'regression','feature_set':sn,'model':mn,'fold':int(fold),'n_features':len(fs),'r2':r2_score(yr[v],pred),'rmse':mean_squared_error(yr[v],pred)**.5,'mae':mean_absolute_error(yr[v],pred)})
+    allr=pd.DataFrame(cr+rr); allr.to_csv(OUT/'per_fold_metrics.csv',index=False,encoding='utf-8-sig'); summary=allr.groupby(['task','feature_set','model'],as_index=False).agg(n_features=('n_features','first'),metric_1_mean=('accuracy','mean'),metric_1_std=('accuracy','std'),f1_mean=('f1','mean'),recall_mean=('recall','mean'),roc_auc_mean=('roc_auc','mean'),r2_mean=('r2','mean'),r2_std=('r2','std'),rmse_mean=('rmse','mean'),mae_mean=('mae','mean')); summary.to_csv(OUT/'summary_metrics.csv',index=False,encoding='utf-8-sig')
+    for task,metric,title,path in [('classification','roc_auc_mean','Classification ROC-AUC','classification_baseline.png'),('regression','r2_mean','Regression R2','regression_baseline.png')]:
+        s=summary[summary.task==task]; plt.figure(figsize=(10,6)); labels=s.feature_set+' | '+s.model; plt.barh(labels,s[metric]); plt.xlabel(metric); plt.title(title+' (training CV)'); plt.tight_layout(); plt.savefig(OUT/path,dpi=180); plt.close()
+    print(summary.to_string(index=False))
+if __name__=='__main__': main()
+
+@@@END@@@
