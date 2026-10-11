@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 本地依赖（不应上传）
+vendor/
+vendor_torch/
+
+# 工作目录与隐私
+.workbuddy/
+
+# 数据中间产物（原始数据保留，中间/临时文件排除）
+*.tmp
+nochange__*.csv
+*_Extracted.csv
+Feature_Correlation_Matrix_All.csv
+
+# 过程记录草稿（大文件，不纳入版本控制）
+*.docx
+*.doc
+
+# 系统文件
+.DS_Store
+Thumbs.db
