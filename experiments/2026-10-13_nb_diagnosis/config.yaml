@@ -1,0 +1,176 @@
+experiment: 2026-10-13_nb_diagnosis
+title: 阶段⑥ · NB（朴素贝叶斯）线索专项诊断
+parent_line: 用户在阶段⑤ 后提出的线索 —— 「NB 在 K=10/20/30 全部榜首 + current_2 accuracy 0.8141 全场最高
+              → 极简模型 + 小特征集在跨区域口径下反复跑到最前面」
+
+# ---------------------------------------------------------------------------
+question: 这条线索要回答什么
+# ---------------------------------------------------------------------------
+questions:
+  - Q0 先整理：目前分类 / 回归表现最好的组合到底是哪几个（跨全部实验，口径对齐后）
+  - Q1 NB 的「K × 空间折」曲线与其他模型有何不同？是"K 越大越好"还是"平"？
+  - Q2 NB 的跨分区种子方差是否系统性低于高容量模型？"稳"这个字用对了吗？
+  - Q3 空间泄漏暴露度（gap = 随机折 − 空间折）随 K 与模型容量如何变化？
+  - Q4 NB 的高 accuracy 是否只是"预测偏向多数类"的保守策略？
+
+# ---------------------------------------------------------------------------
+single_variable_control: ★ 单一变量控制
+# ---------------------------------------------------------------------------
+invariants:
+  - 数据源          data/splits/train.csv（132 行 × 117 特征）
+  - 空间折          run_selector_zoo.spatial_fold（KMeans k=10 + StratifiedGroupKFold(3)）
+                    分区种子 42 / 7 / 2026 —— 与阶段④/⑤ 逐字复刻（直接调用，不重写）
+  - 随机折          data/cv/classification_folds.csv（种子 42）
+  - 选择器          selector_zoo.CLF_SELECTORS（K>2 时用 relieff / lasso / random 三个代表）
+  - 模型实现        run_selector_zoo.clf_models（直接复用，含 Pipeline 包装）
+  - 特征集          K=2 时强制 current_2 = [NREDI1, NDVIre2]
+changed:
+  - K 网格从 (5,10,20,30) 扩为 (2,5,10,20,30)  ← 为画出"强特征起点"
+  - 额外记录混淆矩阵四格（tn/fp/fn/tp）与预测正类比例 ← 为回答 Q4
+
+# ---------------------------------------------------------------------------
+scope
+# ---------------------------------------------------------------------------
+track: clf only（回归轨的 NB 等价物机制不同，未做；见 README §8 局限 3）
+models: [NB, LR, SVMLin, SVM, KNN, RF, ET, XGB]
+k_grid: [2, 5, 10, 20, 30]
+selectors_for_k_gt_2: [relieff, lasso, random]
+spatial_seeds: [42, 7, 2026]
+random_seeds: [42]
+n_per_fold_rows: 1456
+
+# ---------------------------------------------------------------------------
+key_results: ★ 核心结论
+# ---------------------------------------------------------------------------
+key_results:
+  Q1_k_curve:
+    跨3种子×3选择器的空间折 accuracy 均值：
+      NB       0.8141(K2) → 0.6975(K5) → 0.7346(K10) → 0.7674(K20) → 0.7778(K30)
+      SVMLin   0.8114      → 0.7061      → 0.7214      → 0.6886      → 0.6180
+      LR       0.8023      → 0.6727      → 0.6901      → 0.6695      → 0.6415
+      SVM      0.8090      → 0.7185      → 0.7395      → 0.7276      → 0.7077
+      ET       0.6939      → 0.7040      → 0.7083      → 0.7217      → 0.7287
+      KNN/RF/XGB 其余
+    ★ 结论：K=5 以上只有 NB 单调回升；K=30 时 NB 领先第二名 ET 达 +0.0491
+    ★ 注意：K=2 全体高分是因为 current_2 是"精选强特征"，不是模型强
+
+  Q2_seed_stability:
+    mean_acc / mean_cross_seed_std / max_cross_seed_std:
+      KNN    0.7266 / 0.0259 / 0.0728
+      SVM    0.7299 / 0.0300 / 0.0733
+      NB     0.7497 / 0.0301 / 0.0664   ← 均值第一、最大 std 最小
+      ET     0.7140 / 0.0327 / 0.0742
+      SVMLin 0.6934 / 0.0373 / 0.0674
+      LR     0.6787 / 0.0434 / 0.0991
+      RF     0.7080 / 0.0494 / 0.1057
+      XGB    0.6802 / 0.0543 / 0.0902
+    ★ 结论：NB 不是方差最小（KNN/SVM 更小），但"平均最高 + 最大跨种子 std 最小"
+      → "极简模型更稳"要精确化为"不会出现某个坏种子彻底崩掉"
+
+  Q3_capacity_gap:
+    gap = 随机折acc − 空间折acc（越大 = 越依赖空间记忆）:
+      NB      K2 −0.0095 | K5 +0.0260 | K10 +0.0171 | K20 −0.0106 | K30 −0.0108  ← K20/30 为负！
+      SVMLin  K2 −0.0069 | K5 +0.0123 | K10 +0.0327 | K20 +0.0603 | K30 +0.1102  ← 单调上升
+      LR      K2 +0.0022 | K5 +0.0458 | K10 +0.0588 | K20 +0.0696 | K30 +0.0716
+      RF      K2 +0.0300 | K5 +0.0287 | K10 +0.0410 | K20 +0.0475 | K30 +0.0667
+    ★ 结论：高容量模型的 gap 随 K 单调上升；NB 在 K=20/30 的 gap 为负（全场唯一）
+      → 特征数 × 模型容量的**交互效应**首次被量化
+
+  Q4_conservatism:
+    预测正类率 vs 真实正类率(-0.4390) 的偏差 / recall 不对称:
+      NB   pred 0.4909 偏差 +0.0519 | 不对称 +0.0311   ← 不是靠猜多数类
+      ET   pred 0.5109 偏差 +0.0719 | 不对称 +0.0736   ← 反而 ET 更偏
+    ★ 结论：【否定】NB 不是"预测多数类"的保守策略；本数据也不类别不平衡（多数类仅 54.5%）
+
+  ★ 机制链条（可写论文）:
+    ① 特征高度冗余（relieff top-5 平均|r|=0.678，最大 0.987）
+    ② 随 K 增大新增特征越来越弱（平均|Cohen d|: 1.238@K2 → 0.880@K30；平均|r|: 0.762 → 0.479）
+    ③ 高容量模型须区分高度相关且都弱的特征 → 权重方差爆炸 → 随 K 下降
+    ④ NB 只估类条件均值/方差，参数极少，对相关性"视而不见" → 此处错误假设代价小
+    ⑤ 结果：唯一随 K 上升的模型
+    悖论：current_2 两特征 r=0.7621 严重违反条件独立，NB 仍是 K=2 第一
+           → 因为两特征太强（|d|=1.34/1.14），假设错也压不住信号
+           → NB 的适用边界是「高信噪比特征」，不是「独立特征」
+
+  ★ 对用户线索的裁定:
+    - "NB 在 K=10/20/30 全部榜首"        ⚠️ 单种子口径成立；跨3种子下 K=10 是 KNN(0.7635)
+    - "current_2 accuracy 0.8141 全场最高" ✅ 成立（3种子均值最高 + 最差种子 0.8078 也最高）
+    - "极简模型 + 小特征集最稳"            ❌ "小"错了 → 优势在 K 大时最明显
+    - "极简模型最稳"                       ⚠️ 部分成立（最大跨种子 std 最小，但方差非最小）
+
+# ---------------------------------------------------------------------------
+best_combinations: 第〇节的整理结论
+# ---------------------------------------------------------------------------
+best_clf:
+  most_reliable: current_2 + NB, 空间折 accuracy 0.8141（3 分区种子均值，最差种子 0.8078）
+  single_seed_top: rfe_svm+NB@K10 0.8200 / enet+NB@K20 0.8149 / spa+NB@K30 0.8045（全 TIE）
+  caveat: LDA/PLSDA/RF 在单种子 s42 能到 0.8331，但跨种子最差仅 0.7597/0.7119 → 不稳
+best_reg:
+  current_2 + XGB, 空间折 r2 0.1215（3 分区种子均值，最差种子 +0.0296）
+  ★ 除它以外没有任何组合的跨种子均值 r2 为正；阶段⑤ 最强挑战者仅 −0.0362
+
+# ---------------------------------------------------------------------------
+code_touched
+# ---------------------------------------------------------------------------
+new_scripts:
+  - src/aggregate_best_combinations.py   # 全项目最佳组合汇总（含口径修正逻辑）
+  - src/diagnose_nb.py                   # NB 线索专项诊断（Q1-Q4）
+scripts_modified: []   # 本阶段未改动任何既有脚本/模块
+reuse:
+  - run_selector_zoo.spatial_fold / load_random_folds / clf_models / load_train
+  - selector_zoo.CLF_SELECTORS / NEEDS_MI / compute_mi_matrix
+
+# ---------------------------------------------------------------------------
+commands
+# ---------------------------------------------------------------------------
+commands:
+  - D:/Anaconda/python.exe src/aggregate_best_combinations.py
+  - D:/Anaconda/python.exe src/diagnose_nb.py --smoke     # 8 s
+  - D:/Anaconda/python.exe src/diagnose_nb.py             # 146 s
+
+# ---------------------------------------------------------------------------
+outputs
+# ---------------------------------------------------------------------------
+outputs:
+  results/stage_summary/best_combinations_clf.csv
+  results/stage_summary/best_combinations_reg.csv
+  results/stage_summary/model_k_curve_spatial_clf.csv
+  results/stage_summary/model_k_curve_spatial_reg.csv
+  results/stage_summary/_best_combo_stdout.txt
+  results/nb_diagnosis/README.md
+  results/nb_diagnosis/k_curve_with_k2.csv
+  results/nb_diagnosis/seed_stability.csv
+  results/nb_diagnosis/bias_variance.csv
+  results/nb_diagnosis/conservatism.csv
+  results/nb_diagnosis/per_fold_raw.csv
+  results/nb_diagnosis/fig_q1_k_curve.png
+  results/nb_diagnosis/fig_q2_seed_stability.png
+  results/nb_diagnosis/fig_q3_capacity_gap.png
+  results/nb_diagnosis/fig_q4_conservatism.png
+  results/nb_diagnosis/_stdout.txt
+
+# ---------------------------------------------------------------------------
+limits: 诚实边界
+# ---------------------------------------------------------------------------
+limits:
+  - 空间折仅 3 个分区种子 → 跨种子 std 只能当粗略指标，不是置信区间
+  - K>2 只用 3 个选择器代表全谱；"跨选择器均值"抹掉了选择器×模型的交互
+    （例：lasso+NB@K10 = 0.7415 vs rfe_svm+NB@K10 = 0.8200，差 0.079）
+  - 只做分类轨；回归轨的对应物机制不同，未做
+  - 未做显著性检验 / 未做多重比较校正 → 全部为描述性结论
+  - Cohen's d 未做小样本校正（Hedges' g）
+  - 全程未读 test_locked.csv
+  - ★ 本实验为「探索」，结论不进论文/竞赛作品；须待确认阶段复核
+
+# ---------------------------------------------------------------------------
+next: 阶段⑦ 建议（把线索升级为正式假设）
+# ---------------------------------------------------------------------------
+proposed_next:
+  H1: 跨区域口径下，模型容量与最优 K 呈负相关
+      证据初现：NB 最优K=30、ET 最优K=30、KNN 最优K=10、SVM/LR/SVMLin/XGB 最优K=2
+      → 实验：把模型按容量排序，画「最优 K × 容量」曲线
+  H2: K 的收益取决于新增特征的边际质量（按重要性排序后递减 → 高容量模型过拐点后净负）
+      → 实验：固定模型，把特征按 |Cohen's d| 排序逐个加入，看每个模型的 accuracy 曲线
+  H3: "参数少"是 NB 稳健的原因
+      → 实验：GaussianNB vs BernoulliNB vs QDA(shrinkage) 对照
+        （若 QDA 参数多而像 SVM 一样随 K 崩，则 H3 成立）

@@ -1,0 +1,150 @@
+# 选择器动物园实验 · 配置
+# 目的：在同一套折上做「选择器 × 模型」全交叉的探索性横评。
+# 阶段划分：① 矩阵跑通(K=10/随机折/1 seed) → ② K 敏感性 → ④ 空间折 → ④b 3 折随机折对照
+#          → ③ 多种子（按两阶段协议后置到确认阶段）
+# 状态：阶段① 完成（2026-10-12 23:25，修复求解器后重跑）
+#       阶段② 完成（2026-10-12 23:34）
+#       阶段④ 完成（2026-10-12 23:51，空间折 K=5/10/20/30，1 分区种子）
+#       阶段④b 完成（2026-10-13 12:33，随机 3 折对照，剥离"折数/训练量"混杂）
+#       （阶段③ 多种子按两阶段协议后置到确认阶段，见 docs/确认阶段待办清单.md）
+
+experiment: selector_zoo
+date: 2026-10-12
+stage: 4b
+status: stage1_done_stage2_done_stage4_done_stage4b_done
+
+data:
+  train: data/splits/train.csv          # 132 x 117（第 9 列起为特征）
+  clf_folds: data/cv/classification_folds.csv   # 5 折，row_index -> train.csv 行号
+  reg_folds: data/cv/regression_folds.csv       # 5 折，仅 DI>0 子集（116 行）
+  test_locked: data/splits/test_locked.csv      # ★ 全程未读
+
+targets:
+  clf: "Unnamed: 2"    # 0 健康 / 1 患病
+  reg: DI              # 严重度 0-100，仅 DI>0 子集
+
+tracks:
+  clf:
+    selectors: [relieff, mrmr, spa, lasso, enet, perm, rfe_svm, fs_cs, stab_fscs, stab_lasso, random]
+    models:    [LR, SVM, SVMLin, RF, ET, LDA, PLSDA, KNN, NB, XGB]
+  reg:
+    selectors: [relieff, mrmr, spa, cars, lasso, enet, perm, rfe_svr, stab_lasso, random]
+    models:    [Ridge, SVR, RF, ET, PLSR, ENet, KNN, GPR, XGB]
+
+design:
+  k_values_stage1: [10]                  # 阶段①单档
+  k_values_stage2: [5, 10, 20, 30]       # 阶段②扩档
+  seeds: [42]                            # 阶段③扩到 3-5 个（已按两阶段协议后置）
+  schemes_stage12: [A_random]            # 阶段①②只用随机折（5 折）
+  schemes_stage4:  [B_spatial]           # 阶段④改空间折，K 档与阶段②一致，便于配对对照
+  schemes_stage4b: [A_random3]           # 阶段④b：随机 3 折（StratifiedKFold(3, shuffle, seed=42)）
+  spatial:
+    blocks: 10                           # KMeans(k=10) on (O_Lat, O_Lng)
+    n_splits: 3                          # StratifiedGroupKFold
+    partition_seed: 42                   # ★ 只跑一个分区；重复分区属确认阶段
+    clf_folds_on: 全部 132 行
+    reg_folds_on: DI>0 的 116 行（与 src/spatial_group_cv.py 一致，保证两次实验同折）
+    no_buffer: true                      # 训练集本就小，不设空间缓冲带
+  selection_inside_fold: true            # 逐折选特征，仅用训练折 → 无泄露
+  native_model: true                     # (B) embedded/wrapper 用其原生模型选特征
+  preprocessor: 折内 fit（SimpleImputer 中位数 + 可选 IQR + StandardScaler），复用 preprocessing.py
+  preprocessor_note: 本实验用模型 Pipeline 内的纯 StandardScaler；与 P0-② 的 clip_outliers=True 不同，跨实验引用需说明
+
+determinism:                             # ★ 2026-10-12 修复，见下
+  l1_solver: saga                        # 原 liblinear 无种子、结果随排序漂移
+  l1_seed: 0
+  l1_max_iter: 3000
+  l1_tol: 1.0e-3
+  audit_scripts:
+    - src/selfcheck_determinism.py       # 阶段①调用顺序 vs 阶段②调用顺序，k=10 是否逐位相同
+    - src/verify_stage2_vs_stage1.py     # 阶段② k=10 是否逐行复现阶段①
+
+reference:
+  noise_floor: random    # 随机抽 k 个特征 —— 判断"选择器是否有价值"的基准线
+
+outputs:
+  dir: outputs/
+  expected:
+    - clf_per_fold_stage1.csv / clf_summary_stage1.csv     # 550 / 110 行
+    - reg_per_fold_stage1.csv / reg_summary_stage1.csv     # 450 / 90 行
+    - clf_per_fold_stage2.csv / clf_summary_stage2.csv     # 2200 / 440 行
+    - reg_per_fold_stage2.csv / reg_summary_stage2.csv     # 1800 / 360 行
+    - clf_per_fold_stage4.csv / clf_summary_stage4.csv     # 1320 / 440 行（空间折）
+    - reg_per_fold_stage4.csv / reg_summary_stage4.csv     # 1080 / 360 行（空间折）
+    - clf_per_fold_stage4b.csv / clf_summary_stage4b.csv   # 1320 / 440 行（随机 3 折）
+    - reg_per_fold_stage4b.csv / reg_summary_stage4b.csv   # 1080 / 360 行（随机 3 折）
+    - fold_design_stage4.csv                               # ★ 空间折设计审计（先看它再信数字）
+    - fold_design_stage4b.csv                              # ★ 随机 3 折设计审计
+    - spatial_blocks_{clf,reg}_stage4.csv                  # 每行所属空间块
+    - metadata_stage1.json / metadata_stage2.json / metadata_stage4.json / metadata_stage4b.json
+    - run_progress_stage1.log / ..._stage2.log / ..._stage4.log / ..._stage4b.log
+    - _pre_fix_liblinear/                                  # ★ 修复前结果留档（对照用）
+  figures:
+    - ../../results/selector_zoo/fig1_selector_model_heatmap.png
+    - ../../results/selector_zoo_k/fig1_k_curve_clf.png
+    - ../../results/selector_zoo_k/fig2_k_curve_reg.png
+    - ../../results/selector_zoo_k/fig3_delta_heatmap_{clf,reg}.png
+    - ../../results/selector_zoo_spatial/fig1_protocol_k_curve_clf.png
+    - ../../results/selector_zoo_spatial/fig2_protocol_k_curve_reg.png
+    - ../../results/selector_zoo_spatial/fig3_gap_heatmap_{clf,reg}.png
+    - ../../results/selector_zoo_spatial/fig4_ranking_shift_{clf,reg}.png
+    - ../../results/selector_zoo_protocol/fig1_k_curve_{clf,reg}.png
+    - ../../results/selector_zoo_protocol/fig2_decomposition_{clf,reg}.png
+    - ../../results/selector_zoo_protocol/fig3_rank_scatter_{clf,reg}.png
+
+scripts:
+  selectors: src/selector_zoo.py
+  driver:    src/run_selector_zoo.py       # --smoke / --stage1 / --stage2 / --stage4 / --stage4b / --quick
+  plotting:  src/plot_selector_zoo.py
+  analysis:  [src/analyze_stage2_k.py, src/analyze_stage4_spatial.py, src/analyze_stage4b_protocol.py]
+  audits:    [src/selfcheck_determinism.py, src/verify_stage2_vs_stage1.py]
+
+runtimes:
+  stage1:  291 s
+  stage2:  505 s
+  stage4:  302 s    # 分类轨 160 s（1320 行）+ 回归轨 302 s 累计
+  stage4b: 295 s    # 分类轨 153 s（1320 行）+ 回归轨 292 s 累计
+  smoke:   ~160 s
+
+notes: |
+  * 阶段①②为探索，结论不进论文；需确认阶段（多种子+配对检验+空间折）复核。
+  * 配对单位 (model, fold) 不独立 → p 值偏乐观，仅作方向提示（Dietterich 1998）。
+  * ★ 2026-10-12：发现 sklearn `liblinear` 求解器无种子、结果排序会漂移，
+    导致「同一实验两次运行的 k=10 结果对不上（8/550 行）」。
+    已换为 `saga` + random_state=0，重跑①②，校验 1166 行 max|Δ|=0 → PASS。
+    **修复翻转了两个结论**：`stab_lasso`「显著劣于随机」实为假象（→ 不显著）；
+    `lasso` 从"勉强显著"→ 不显著；`rfe_svm` 从不显著 → 显著。
+  * 已知观察（阶段②结论）：
+    - `random` 噪声下限随 K 上升（分类 0.638→0.736；回归 0.135→0.234）
+      → 「Δ vs random」不可跨 K 比较，跨 K 须看绝对性能。
+    - `relieff` 是唯一在 4 个 K 档全部显著的选择器（两条轨都是）。
+    - XGB 分类在 4 个 K 档全部垫底；PLSR/Ridge 随 K 单调暴跌；ET/KNN/XGB 随 K 上升。
+    - **K 对模型的影响 > K 对选择器的影响**。
+  * 超参均未调优（SVR/PLSR/XGB 用固定超参）→ 差表现的归因需谨慎。
+  * ★ 2026-10-12 阶段④（空间块 CV）结论：
+    - 分类：空间折只掉一点点（总体平均 gap = accuracy +0.0171；440 组合中 63.2% 为正），
+      选择器排名基本保持（Spearman +0.745, p=0.008）；最优 K 仍是 20（与随机折相同）。
+    - 回归：**全面崩塌**（总体平均 gap = R² +0.6131；360/360 组合全为正；空间折下 R² 几乎全负），
+      选择器排名被完全洗牌（Spearman +0.236, p=0.511）；最优 K 向小 K 移动（K=5 最好）。
+    - 差中差校正（扣掉 `random` 自身的协议效应）：分类里 `relieff` 的超额 gap ≈ 0（−0.0006）
+      → 它的优势不是空间泄漏造出来的；`rfe_svm` 超额 gap 最大（+0.0341）→ 随机折数字最乐观。
+      回归里 `relieff` 超额 gap 最大（+0.1209）→ 随机折优势有一部分是泄漏。
+    - ⚠️ 协议不对称：随机折 5 折（训练 ~80%）vs 空间折 3 折（训练 ~67%）→ gap 里混入
+      "训练数据变少"。顶部待办：**3 折随机折对照**（阶段④b）用于剥离这个混杂。
+    - ⚠️ 只用了 1 个空间分区种子（42），分区本身的不稳定性未评估（属确认阶段）。
+    - ⚠️ 从 360/440 个组合里挑"最佳组合"必然高估（winner's curse）→ 只能当假设，不能当结论。
+  * ★ 2026-10-13 阶段④b（3 折随机折对照）—— 把 ④ 的 gap 拆成"训练量"与"空间"两项：
+    - 设计：新增 `A_random3` = StratifiedKFold(3, shuffle, seed=42)。**训练量与空间折严格对齐**
+      （分类均值 88.0 vs 88.0；回归 77.3 vs 77.3）→ 唯一变量就是"折怎么切"。
+      恒等式 total_gap = depth_gap + spatial_gap 精确成立（残差 ≤ 2.2e-16）。
+    - **分类**：total +0.0171 = depth **+0.0168**（p<1e-4，63.9% 为正）+ spatial **+0.0002**（p=0.54，50.2% 为正）
+      → ⚠️ **④ 的分类 gap 基本全是"5 折 → 3 折"，空间本身贡献 ≈ 0**。
+      在 K ≤ 30 的降维空间里，分类随机折**没有可检出的空间泄漏**
+      （与 P0-② 的 +0.124 不矛盾：那边喂的是上百维原始特征，泄漏随特征集规模放大 —— 与 FS-CS 的发现同向）。
+    - **回归**：total +0.6131 = depth **−0.0275**（方向还相反）+ spatial **+0.6407**（**100% 为正**）
+      → ④ 的回归结论**被坐实并加强**：gap 100% 由空间造成，训练量混杂可忽略。
+    - 连带修正：④ 的「分类排名基本保持（Spearman +0.745, p=0.008）」在固定 3 折后只剩
+      +0.400 (p=0.223) → 该指标（n=11）不可当证据；④ 的「分类 gap 随 K 下降」也是折数效应。
+    - 模型（回归 spatial gap）：Ridge +0.878 / PLSR +0.832 最怕空间，SVR +0.384 最稳（与 ④ 一致）；
+      分类所有模型的 spatial gap 都在 ±0.02 内（无信号）。
+    - 结果目录 `results/selector_zoo_protocol/`（README + 6 图 + 5 CSV）。

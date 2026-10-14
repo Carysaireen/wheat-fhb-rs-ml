@@ -1,0 +1,7 @@
+﻿set,n_features
+RF+MI ≥3/5,6
+RF+MI ≥4/5,4
+RF+MI =5/5,3
+Boruta ≥3/5,30
+Boruta ≥4/5,23
+Boruta =5/5,17

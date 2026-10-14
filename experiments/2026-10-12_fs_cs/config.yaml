@@ -1,0 +1,71 @@
+experiment: 2026-10-12_fs_cs
+title: FS-CS（紧凑度-分离度）特征选择器对照实验
+date: 2026-10-12
+status: running
+
+goal: >
+  引入第 4 种特征选择器 FS-CS，与现有 RF重要性+MI / Boruta 并排对照；
+  分别在【随机分层折】与【空间分组折】下评估，回答核心问题：
+  FS-CS 在随机折下的（潜在）优势，在空间折下是否仍然存活？
+
+reference:
+  primary: >
+    Sun H., Mai H., Mao Y., Li Q., Guo M., Liu Y., Feng Z., Feng H., Guo W.,
+    Yang G., Deng X., Song X. (2025). Multi-variety monitoring of potato late
+    blight severity using UAV data with improved SMOTE-CS for small sample
+    modeling and deep feature learning. European Journal of Agronomy.
+    (ScienceDirect PII: S1161030125001984)
+  evidence: >
+    原文摘要明确：FS-CS 能有效做高维病害相关特征选择；
+    相比 mRmR 与 ReliefF，FS-CS 以更少的特征达到更高精度。
+  principle: 经典类可分性度量（within-class scatter S_W / between-class scatter S_B）
+  correction: >
+    ⚠️ 此前 docs/模型改进方向_文献检索报告.md 写作 “Zhou et al. 2023 提出 FS-CS” 属误引，
+    已于 2026-10-12 更正为 Sun et al. 2025（Eur. J. Agronomy）。
+
+data:
+  train: data/splits/train.csv                     # 132 行 × 117 特征
+  random_folds: data/cv/classification_folds.csv   # 固定 5 折 StratifiedKFold(seed=42)
+  test: data/splits/test_locked.csv                # ★ 全程不读
+
+selector:
+  variants:
+    univariate: "J(j) = S_B(j) / S_W(j)，逐特征独立打分后取 top-K（主口径）"
+    greedy: "贪心前向选择，最大化 trace(S_B)/trace(S_W)，抑制特征间冗余（对照）"
+  k_values: [10, 20, 30]
+  scale_invariant: true    # J 为比值 → 标准化不改变排序，故在原始特征值上计算
+  deterministic: true      # 无任何随机性 → 逐折波动只来自折划分
+
+evaluation:
+  models: [LR, SVM, RF]
+  metric_primary: roc_auc
+  schemes:
+    A_random:
+      folds: 固定 5 折（data/cv/classification_folds.csv）
+      note: 与项目既有 Random-CV 口径一致
+    B_spatial:
+      blocks: KMeans(n_clusters=10) on (O_Lat, O_Lng)
+      folds: StratifiedGroupKFold(n_splits=3)，seeds=[42, 7, 2026]
+      note: 与 2026-10-11_spatial_cv 口径一致（整块留出）
+  protocols:
+    nested:
+      desc: 每个外层训练折内部重新做 FS-CS 选择（诚实、无泄漏）—— 主口径
+    global:
+      desc: 用随机折 5 折的聚合排名定出特征集，再在固定折上评估
+            （与既有 feature_set_cv 的 8 组特征集口径一致，便于直接对照）
+  leakage_guard: >
+    选择、标准化、模型拟合全部只发生在训练折；验证折仅被 transform / predict。
+    全程未读取 test_locked.csv。
+
+outputs:
+  dir: outputs/
+  expected:
+    - fs_cs_fold_results.csv      # 每折每特征的 J 分与排名、是否入 top10/20/30
+    - fs_cs_stability.csv         # 跨折入选率与平均排名
+    - nested_per_fold_metrics.csv # 嵌套评估逐折明细
+    - nested_summary.csv          # 嵌套评估汇总（A_random vs B_spatial）
+    - gap_table.csv               # ★ A_random − B_spatial 差值
+    - global_sets_summary.csv     # 全局特征集评估（与既有选择器对照）
+    - selector_benchmark.csv      # ★ 选择器擂台：全部选择器 × 3 模型 × (A_random/B_spatial)
+    - selection_sets.csv          # 各 variant × K 选出的特征名单（可追溯）
+    - experiment_metadata.json    # 元信息（含 test_set_used=false）

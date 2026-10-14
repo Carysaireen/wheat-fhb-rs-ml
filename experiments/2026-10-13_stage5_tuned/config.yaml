@@ -1,0 +1,91 @@
+# 阶段⑤ · 调优参数下的「选择器 × 模型」全矩阵
+
+> 实验日期：2026-10-13 ｜ 单一变量：**模型超参来源**（默认 → 调优）
+> 状态：见 `outputs/run_progress_stage5_full.log` 与 `results/stage5_tuned/README.md`
+
+## 这个实验在回答什么
+
+阶段①②④ 跑的「选择器 × 模型」矩阵，**模型全部用出厂默认超参**。于是有一个
+必须正面回答的质疑：
+
+> 「你们说'特征选择器几乎没用'，会不会只是因为模型根本没调好？」
+
+阶段⑤ 把每个模型换成**在 `current_2` 上专属调优过的参数**
+（`champion_best_params.json`，由 `run_champion_profile.py` STAGE1 用
+LOFO 诚实口径产出），再把整张矩阵重跑一遍，逐条挑战 `current_2` 擂主。
+
+## ★ 单一变量控制（硬约束）
+
+| 环节 | 阶段②/④（对照） | 阶段⑤（处理） | 是否一致 |
+|---|---|---|---|
+| 数据 | `train.csv` 132×117 | 同 | ✅ |
+| 折向量 | `classification_folds.csv` / `regression_folds.csv` | 同 | ✅ |
+| 空间折 | KMeans(k=10)+StratifiedGroupKFold(3)，种子 42/7/2026 | 同 | ✅ |
+| 选择器实现 | `selector_zoo.py` 11 分类 / 10 回归 | 同（同文件同函数） | ✅ |
+| K 网格 | 5 / 10 / 20 / 30 | 同 | ✅ |
+| 打分函数 | `clf_scores` / `reg_scores` | 同 | ✅ |
+| **模型超参** | **出厂默认（网格第 0 号）** | **current_2 上调优** | ❌ ← 唯一变化量 |
+
+⚠️ **口径声明**：调优参数是在 `current_2`（2 特征）上选的，阶段⑤ 会把它
+沿用到 K=5/10/20/30。这**不是**"每个 K 各自调参"（那要给每个 K 单独扫网格，
+属超参扫描的延伸）。本阶段要回答的是"**这批参数是否让矩阵整体变强**"，
+所以故意固定用 `current_2` 的一组参数，把它当成"一个被调过的模型族"。
+
+## 设计
+
+| 项 | 设定 |
+|---|---|
+| 分类 | 11 选择器 × 10 模型 × K{5,10,20,30} × {随机5折, 空间3折×3种子} |
+| 回归 | 10 选择器 × 9 模型 × K{5,10,20,30} × 同上 |
+| 调参来源 | `experiments/2026-10-13_champion_profile/outputs/champion_best_params.json` |
+| 主指标 | 分类 `roc_auc`（选择器动物园口径）；回归 `r2` |
+| 裁判 | 空间折为主，随机折为辅；三态 WIN/TIE/LOSE，门槛 = MDD |
+| 擂主 | **钉死 `current_2`** 在空间折下的最优模型 |
+
+## 关键实现注意（踩过的坑）
+
+1. **模型内部要不要标准化？** `run_selector_zoo` 的模型库里，
+   LR/KNN/SVM/NB/LDA/PLSDA/SVMLin/Ridge/SVR/PLSR/ENet/GPR 都包在
+   `Pipeline([("sc", StandardScaler()), ("m", ...)])` 里，而 RF/ET/XGB 是裸的。
+   阶段⑤ **必须逐一对应**，否则等于偷偷改了预处理（那就不是单一变量了）。
+   → 见 `run_stage5_tuned_matrix.PIPELINE_MODELS`。
+
+2. **`probability=True` 口径不一致（本轮抓出并修复）**：
+   `hyperparam_grids.build_clf` 原来把 SVC 建成 `probability=False`，
+   `clf_scores` 的 `roc_auc` 于是退化成用 `decision_function`。而全项目
+   其余 7 个脚本都用 `probability=True`（走 `predict_proba`）。两条路径的
+   **排序不完全相同**（实测同一折同一特征集差 6e-3）。
+   → 已把 `build_clf` 统一为 `probability=True`。
+   ⚠️ 该修复**只影响 `roc_auc`，不影响 `accuracy`** —— 所以擂主档案的
+   判定（基于 accuracy）不受影响，无需重跑。
+
+## 阶段⑤ 自校验（必跑）
+
+```bash
+D:/Anaconda/python.exe -u src/selfcheck_stage5.py
+```
+把模型工厂换成"出厂默认"后，阶段⑤ 的循环必须**逐位复现阶段② 的 k=10 切片**。
+实测结果：分类 550/550 行 `max|Δ|=1.1e-16`、回归 450/450 行 `max|Δ|=3.6e-15`
+→ **PASS**。这证明新循环与阶段② 语义等价，"阶段⑤ − 阶段②"的差真的只是调参。
+
+## 命令与产出
+
+```bash
+D:/Anaconda/python.exe -u src/run_stage5_tuned_matrix.py --smoke    # 冒烟
+D:/Anaconda/python.exe -u src/run_stage5_tuned_matrix.py            # 全量
+D:/Anaconda/python.exe -u src/analyze_stage5_challenge.py           # 分析与判定
+```
+
+产出：
+- `outputs/{clf,reg}_per_fold_full.csv`、`outputs/{clf,reg}_summary_full.csv`
+- `results/stage5_tuned/challenge_{clf,reg}.csv`（逐条三态判定）
+- `results/stage5_tuned/tuning_effect_{clf,reg}.csv`（调参效应，配对）
+- `results/stage5_tuned/leaderboard_{clf,reg}.csv`（各 K 榜首）
+- `results/stage5_tuned/fig_*.png`、`results/stage5_tuned/README.md`
+
+## 局限（务必随结论一起引用）
+
+- 单模型种子 (42)；跨分区种子 3 个（42/7/2026）。
+- 调优参数只在 `current_2` 上选，未按 K 分别调参（见上"口径声明"）。
+- 未做配对显著性检验与 Holm/BH 多重校正 —— 属探索阶段，结论不进论文数字。
+- 未使用 `test_locked.csv`。

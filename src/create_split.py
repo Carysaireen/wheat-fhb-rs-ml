@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / 'data' / 'raw' / 'Wheat_Scab_Features_Extraction_Ordered_region.csv'
+# 原始数据已集中到项目根 data/raw/（全项目唯一副本），故从 project_v2 上溯一层
+RAW = ROOT.parent / 'data' / 'raw' / 'Wheat_Scab_Features_Extraction_Ordered_region.csv'
 OUT = ROOT / 'data' / 'splits'
 
 def main():

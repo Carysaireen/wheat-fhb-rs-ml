@@ -1,0 +1,73 @@
+# 跨阶段对齐基准实验 · 配置
+# 目的：把「最早基线」与「当前最优」放进**同一套折 + 同一套代码 + 同一指标**里重算，
+#       使跨时期的数字第一次真正可比。
+# 日期：2026-10-13 ｜ 状态：done（219.9 s）
+
+experiment: baseline_alignment
+date: 2026-10-13
+status: done
+
+question:
+  - Q1 回归：现在最好的回归组合，是否优于项目最早的最强基线？
+  - Q2 分类：现在的分类模型，是否优于「最优双特征 + LR」？
+
+design:
+  folds:
+    A_random5:  data/cv/classification_folds.csv 的固定分层 5 折（模型种子 42）
+    B_spatial3: KMeans(k=10) 空间块 + StratifiedGroupKFold(3)，
+                分区种子 42 / 7 / 2026（与 P0-②、FS-CS 完全一致）
+  metrics_clf: [accuracy, f1, recall, roc_auc]
+  metrics_reg: [r2, rmse, mae]
+  main_metric: {clf: accuracy, reg: r2}       # accuracy 才能与最早基线同口径
+
+feature_sets:
+  # —— 最早基线侧（全局固定集合）——
+  all_117:   全部 117 维
+  common_6:  [B8_HOM, B8_MEA, NDVIre2, NDVIre3, NREDI1, NREDI2]   # 项目早先的"共同 6 特征"
+  boruta_30: results/feature_selection/boruta_stability.csv 中 confirmed_rate>=0.6
+  current_2: [NREDI1, NDVIre2]                                     # 早先"黄金双特征"
+  # —— 当前侧（逐折选择，nested，无泄漏；K=10）——
+  relieff_10: zoo.CLF_SELECTORS['relieff'] / REG_SELECTORS['relieff']
+  fs_cs_10:   zoo.CLF_SELECTORS['fs_cs']        # 仅分类（Fisher 判据是分类量）
+  cars_10:    zoo.REG_SELECTORS['cars']         # 仅回归（CARS，回归侧的对应位）
+
+models:
+  clf:  [LR, SVM, RF, ET, KNN, XGB]  +  [LR*, SVM*, RF*, ET*, KNN*, XGB*]
+  reg:  [Ridge, SVR, RF, ET, PLSR, KNN, GPR, XGB] + [Ridge*, SVR*, RF*, ET*, PLSR*, KNN*, GPR*, XGB*]
+  note: 默认 = 与 traditional_baseline_cv.py 逐字一致；
+        * = results/hyperparam_sweep/recommended_params.json 的调优参数
+
+self_check:
+  - current_2 + LR @ A_random5  = 0.8046  (ref: traditional_baseline 0.8046)  -> PASS
+  - current_2 + LR @ B_spatial3 = 0.8023  (ref: fs_cs_selection 0.8023)       -> PASS
+  - 说明：两个独立来源的最早基线数字都被逐位复现 -> 口径真正对齐
+
+outputs:
+  per_fold:  outputs/alignment_{clf,reg}_per_fold.csv    # 1008 / 1330 行
+  summary:   outputs/alignment_{clf,reg}_summary.csv
+  progress:  outputs/run_progress_alignment.log
+  reports:   ../../results/baseline_alignment/           # README + 4 图 + 2 表
+
+scripts:
+  run:     src/run_baseline_alignment.py
+  analyze: src/analyze_baseline_alignment.py
+
+runtimes:
+  run: 219.9 s
+  analyze: ~10 s
+
+headline_results:
+  clf_random5_best:   relieff_10 + ET*   accuracy 0.8197   (最早 current_2+LR = 0.8046, +0.0151)
+  clf_spatial3_best:  common_6 + RF*     accuracy 0.8129   (最早 current_2+LR = 0.8023)
+  clf_contrast:       随机折冠军 relieff_10+ET* 在空间折只剩 0.6722 -> 排名颠倒
+  reg_random5_best:   relieff_10 + KNN*  R2 0.5149         (最早 boruta_30+RF = 0.4450, +0.070)
+  reg_spatial3_best:  current_2 + XGB*   R2 +0.0690        (唯一保持正 R2 的一类)
+  reg_contrast:       换特征集(boruta_30->relieff_10) 在同模型下 0.4450 -> 0.4407，无提升
+  gap_vs_nfeat:       clf Pearson r = +0.52 ; reg r = +0.34 (gap 随特征数上升)
+
+caveats:
+  - 单模型种子(42) + 3 个空间分区种子，未做显著性检验与多重比较校正
+  - 空间 3 折每折样本少（分类 32~53 / 回归 23~48），单点刻度约 1/40≈0.025
+  - 调优超参的诚实值是事后 LOFO 估计，非嵌套 CV
+  - current_2 / common_6 / boruta_30 为全局固定特征集（保留最早基线形态以可比）
+  - 全程未读 test_locked.csv

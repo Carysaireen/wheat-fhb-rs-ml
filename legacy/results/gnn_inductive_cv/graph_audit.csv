@@ -1,0 +1,11 @@
+﻿task,fold,train_nodes,valid_nodes,k,train_edges,mean_neighbors,isolated_nodes
+classification,0,105,27,5,525,5.0,0
+classification,1,105,27,5,525,5.0,0
+classification,2,106,26,5,530,5.0,0
+classification,3,106,26,5,530,5.0,0
+classification,4,106,26,5,530,5.0,0
+regression,0,92,24,5,460,5.0,0
+regression,1,93,23,5,465,5.0,0
+regression,2,93,23,5,465,5.0,0
+regression,3,93,23,5,465,5.0,0
+regression,4,93,23,5,465,5.0,0

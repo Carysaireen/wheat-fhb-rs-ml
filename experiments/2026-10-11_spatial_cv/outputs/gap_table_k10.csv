@@ -1,0 +1,7 @@
+﻿task,model,metric,A_random_mean,B_spatial_mean,gap_A_minus_B
+classification,LR,accuracy,0.7125,0.5881,0.1244
+classification,RF,accuracy,0.7521,0.6792,0.0729
+classification,SVM,accuracy,0.7826,0.7293,0.0534
+regression,RF,r2,0.3942,-0.2957,0.69
+regression,Ridge,r2,0.0724,-1.4813,1.5537
+regression,SVR,r2,0.169,-0.7374,0.9064

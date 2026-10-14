@@ -1,0 +1,95 @@
+# 擂主档案实验 · 配置
+# 目的：把 current_2（NREDI1 + NDVIre2）从"单点"升级为"带误差带、超参公平、
+#       双口径"的项目标杆，供后续所有「特征选择器 × 模型」结果挑战。
+# 状态：完成（2026-10-13，420 s + 分析 20 s + 审计 60 s）
+
+experiment: champion_profile
+date: 2026-10-13
+stage: 1
+status: done
+
+champion:
+  set_name: current_2
+  features: [NREDI1, NDVIre2]
+  feature_indices: [17, 15]
+  rationale: 用户指定的项目标杆；v1 时代的"黄金双特征"
+
+# --------------------------------------------------------------------------- #
+# ★ 单一变量控制（用户强调的硬约束）
+# --------------------------------------------------------------------------- #
+single_variable_control:
+  varying: 特征集（set）
+  held_fixed:
+    data: data/splits/train.csv（132 行 × 117 特征）
+    random_folds: data/cv/{classification,regression}_folds.csv
+    spatial_folds: KMeans(k=10) + StratifiedGroupKFold(3), seeds 42/7/2026
+                   （与 P0-② / FS-CS / baseline_alignment 逐字一致）
+    preprocessing: 折内 fit StandardScaler（对齐 run_selector_zoo.run_track）
+    scoring: R.clf_scores / R.reg_scores
+    grids: hyperparam_grids.CLF_GRIDS / REG_GRIDS
+  audit: src/selfcheck_champion.py  -> PASS（重复跑 + 次序无关性）
+
+design:
+  stage1: current_2 专属超参扫描
+    - 分类 72 个配置（原 77，按特征数裁掉 PLSDA n_components>2 的 5 个）
+    - 回归 76 个配置（原 80，按特征数裁掉 PLSR n_components>2 的 4 个）
+    - 折：A_random5 + B_spatial3_s{42,7,2026}（共 14 折）
+    - 挑参口径：★ 只用 A_random5 做 LOFO；空间折严禁参与挑参（它是裁判）
+  stage2: 多种子建档
+    - 模型种子：42 / 7 / 2026 / 123 / 2024（5 个）
+    - 特征集：current_2 / common_6 / boruta_30 / all_117（4 个，一视同仁）
+    - 模型：各轨在 current_2 上冻结的最优参数
+    - 口径：A_random5 + B_spatial3_s{42,7,2026}
+  stage3: 挑战判定（analyze_challenge.py）
+    - 裁判口径：B_spatial3（空间折）
+    - 胜利门槛：MDD = max(2√2·σ_seed/√n_folds, 1/n_valid_min)
+    - 三态输出：WIN / TIE / LOSE
+
+judge:
+  champion_baseline_clf: current_2 + NB   spatial = 0.8141   MDD = 0.0312
+  champion_baseline_reg: current_2 + XGB  spatial = 0.1215   MDD = 0.0515
+  challengers_clf: 72  ->  0 WIN / 9 TIE / 63 LOSE
+  challengers_reg: 95  ->  0 WIN / 0 TIE / 95 LOSE
+  multiple_comparison:
+    n_clf: 72  (p>=1 false positive by chance = 0.975, Bonferroni a' = 6.94e-04)
+    n_reg: 95  (p>=1 false positive by chance = 0.992, Bonferroni a' = 5.26e-04)
+
+outputs:
+  experiments/2026-10-13_champion_profile/outputs/:
+    - tuning_{clf,reg}_per_fold.csv         # 专属调参逐折（1008 / 1064 行）
+    - tuning_{clf,reg}_summary.csv          # 调参汇总（含 LOFO 诚实值）
+    - profile_{clf,reg}_per_fold.csv        # ★ 5 种子 × 双口径（1320 / 2240 行）
+    - profile_{clf,reg}_summary.csv
+    - champion_best_params.json             # 冻结参数
+    - run_progress_profile.log
+  results/champion_profile/:
+    - champion_{clf,reg}_wide.csv           # ★ 擂主档案（双口径并排）
+    - challenge_{clf,reg}.csv               # ★ 挑战判定表
+    - champion_profile_full.csv
+    - fig_verdict_{clf,reg}.png             # 挑战者胜负条形图
+    - fig_nfeat_spatial_{clf,reg}.png       # ★ 特征数-性能曲线（空间折）
+    - README.md
+
+scripts:
+  driver:   src/run_champion_profile.py     # --stage1 / --quick
+  analysis: src/analyze_challenge.py
+  rules:    src/challenge_rules.py          # 可复用评审规则（Judge / MDD / 三态）
+  audit:    src/selfcheck_champion.py
+
+runtimes:
+  stage1: ~55 s（分类 33 s + 回归 22 s）
+  full:   420 s
+  analysis: 20 s
+  audit:   60 s
+
+conclusions:
+  - ★ 分类 72 个挑战者 0 赢；进入"平"的 9 个里 5 个本身就是小特征集。
+  - ★ 回归 95 个挑战者全输；跨区域下无方案接近 current_2 + XGB。
+  - ★ "双特征 + LR"不是 current_2 的最佳形态：空间折 NB(≈0.814) / SVM(≈0.809) > LR(0.8023)。
+  - ★ 特征数-性能曲线：空间折下所有模型随特征数单调下降（第 5 处独立证据）。
+
+limitations:
+  - MDD 是保守近似，不是置信区间；空间折仅 3 折，单点刻度 ≈ 0.031。
+  - 挑战者来自 baseline_alignment（全局固定集 + 逐折选择混用），仅用于排名。
+  - 回归空间折 std 极大（0.24~0.50）→ 回归结论"方向可用，数值不可精确引用"。
+  - 未做正式显著性检验与多重校正；全程未读 test_locked.csv。

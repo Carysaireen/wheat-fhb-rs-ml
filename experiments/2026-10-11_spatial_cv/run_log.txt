@@ -1,0 +1,104 @@
+# 运行日志 — 2026-10-11_spatial_cv
+
+状态：**done（已完成，结论稳健）**
+纪律：本实验只使用训练集 + 内部交叉验证，**不读取封存测试集**（`test_locked.csv`）。✅ 全程遵守。
+
+---
+
+[2026-10-11 22:12] 实验目录建立：`config.yaml` / `run_log.txt` / `outputs/`。
+                    等待 `src/spatial_group_cv.py` 编写完成后开跑。
+
+[2026-10-11 22:19] 【方案预演】未跑正式实验，先验证分组可行性。
+  数据：train.csv 132 行（72 健康 / 60 患病），DI>0 子集 116 行。
+  现状折：每折 26–27 样本，标签约 [14-15 : 12]，分层良好。
+
+  空间分组预演（KMeans on O_Lat/O_Lng）：
+    k=5  + 5折 → 每折仅 1 块，标签极端（如 [0:2,1:15]、[0:32,1:3]）不可用
+    k=10 + 5折 → fold3 仅 2 样本，不可用
+    k=10 + 3折 → 53/32/47，标签 [23:30]/[19:13]/[30:17]   ← 采用
+    k=8  + 3折 → 14/80/38（fold0 偏小）
+    k=12 + 3折 → 39/53/40，标签均衡                      ← 备选敏感性分析
+
+  ★ 关键发现：k=10 时存在「全健康块」(n=19) 与「全患病块」(n=11)
+    → 地理位置与病害标签强耦合，佐证「随机 CV 存在空间泄漏」的担忧。
+
+  ★ 结论：config.yaml 中空间分组的 n_splits 需由 5 改为 3。
+  状态：等待用户确认后编写 src/spatial_group_cv.py。
+
+<!-- 运行后在此追加：命令、环境、关键输出数字、结论 -->
+
+[2026-10-11 23:05] 【正式运行】脚本 `src/spatial_group_cv.py`（新写）。
+  环境：Anaconda python，sklearn 1.7.2。
+  命令：
+    python src/spatial_group_cv.py --quick            # seed=42 快速验证
+    python src/spatial_group_cv.py                    # 3 seeds [42,7,2026]（主结果）
+    python src/spatial_group_cv.py --k 8              # 敏感性
+    python src/spatial_group_cv.py --k 12             # 敏感性
+  预处理：复用 preprocessing.build_preprocessor(clip_outliers=True)，经 Pipeline 绑定，
+          只在训练折 fit（无泄漏）。模型同 traditional_baseline_cv.py。
+
+  ── 主结果（k=10, 3 折, 3 seeds 均值）──
+    task          model  metric  A_random  B_spatial   gap
+    classification  LR   acc     0.7125    0.5881     +0.1244
+    classification  RF   acc     0.7521    0.6792     +0.0729
+    classification SVM   acc     0.7826    0.7293     +0.0534
+    regression      RF   R²      0.3942   -0.2957     +0.6900
+    regression   Ridge   R²      0.0724   -1.4813     +1.5537
+    regression     SVR   R²      0.1690   -0.7374     +0.9064
+
+  ── k 敏感性（分类 gap）──
+    k=8 : LR +0.089 / RF +0.104 / SVM +0.118   （B 全折异常低）
+    k=10: LR +0.124 / RF +0.073 / SVM +0.053   （主口径）
+    k=12: LR +0.117 / RF +0.088 / SVM +0.071
+  → 三种 k 结论一致：分类准确率 B 比 A 低 5–13 个点。
+
+  ── 回归：失效更严重 ──
+    空间折下 R² 全面转负（RF -0.30 / SVR -0.74 / Ridge -1.48），
+    远低于随机折（0.39 / 0.17 / 0.07）。gap 高达 +0.69 ~ +1.55。
+
+  ★ 结论：现有随机 CV 数字存在显著空间泄漏（乐观水分）。
+    - 分类：准确率乐观约 5–13 个百分点；
+    - 回归：随机折的 R²≈0.39 在空间外推下不成立（转负），
+      R² 的真实泛化能力被严重高估 —— 与 Morellos 2025「R² 0.71→1.00」同类现象。
+  ★ 注意（诚实性）：空间折 R² 转负，部分是「观测空间太小 + 块间类别不均衡」导致的外推
+    困难（Roberts 2017 警告的偏保守方向）。故应两者并报，区间内取真值。
+
+  产出：outputs/ 下 per_fold_metrics.csv / summary_metrics.csv / gap_table.csv /
+        fold_design.csv / spatial_blocks.csv（另存 gap_table_k8.csv、gap_table_k12.csv）
+
+[2026-10-11 23:36] 【图表产物】为论文"空间验证"章节生成正式图表（新脚本 `src/plot_spatial_validation.py`）。
+  命令：python src/plot_spatial_validation.py
+  输出目录：results/spatial_validation/
+    fig1_gap_classification.png   分类准确率 A/B 对照 + gap 标注
+    fig2_gap_regression.png       回归 R² A/B 对照 + gap 标注
+    fig3_k_sensitivity.png        k=8/10/12 敏感性（分类/回归 双子图）
+    fig4_fold_design.png          折大小与标签构成审计（A 5折 vs B 3折）
+    fig5_spatial_map.png          空间块归属 + 标签空间分布（含块质心标注）
+    README.md                     图表清单 + 核心数字 + 写作要点 + 复现命令
+  ★ 设计要点：fig1/fig2 用蓝(随机)/红(空间)对照色，gap 用橙色双向箭头+标签；
+    fig5 左右并置"块着色 vs 标签着色"，直观展示空间泄漏根源。
+  状态：done。
+
+[2026-10-12 21:00] 【修复 · 输出文件覆盖 bug】
+  问题：原 `src/spatial_group_cv.py` 输出文件名**不含 k**（gap_table.csv / summary_metrics.csv /
+        per_fold_metrics.csv / fold_design.csv / spatial_blocks.csv），多次运行互相覆盖。
+        运行顺序 --quick→默认(k=10)→--k 8→--k 12，**最后跑的是 k=12** →
+        上述"主"文件实际存的是 **k=12 结果**；真正的 k=10 主口径结果被覆盖（仅本日志留有数字）。
+        连带影响：fig3 中「k=10」与「k=12」两根柱数值完全相同；fig4 标 k=10 实为 k=12；
+        README「核心数字 (k=10)」标签错误。
+  修复：① `spatial_group_cv.py` 输出名改为带 k 后缀（gap_table_k{k}.csv 等），杜绝覆盖；
+        ② 重跑 k=10 / 8 / 12（各 3 seeds）→ outputs/ 下 *_k8 / *_k10 / *_k12 三套齐全；
+        ③ `plot_spatial_validation.py` 改读 gap_table_k10.csv（fig1/fig2）、fold_design_k10.csv（fig4）、
+           gap_table_k8/10/12.csv（fig3）；
+        ④ 重建 fig1–5 与 README。
+  ★ 澄清：本日志上方的数字（k=10 主结果、k 敏感性、回归）经重跑复核**全部正确**；
+          此前「文件对不上」的根因是文件被覆盖，**非记录错误**。
+  ★ 规范（自本次起）：outputs/ 下所有结果文件均带 k 后缀；**主口径 = k10**，
+          即 gap_table_k10.csv / summary_metrics_k10.csv / fold_design_k10.csv。
+
+  重跑复核（真实值）：
+    k=10 分类 gap：LR +0.1244 / RF +0.0729 / SVM +0.0534（与上方主结果一致 ✓）
+    k=10 回归 gap：RF +0.6900 / Ridge +1.5537 / SVR +0.9064（一致 ✓）
+    k=8  分类 gap：LR +0.0889 / RF +0.1042 / SVM +0.1179
+    k=12 分类 gap：LR +0.1165 / RF +0.0882 / SVM +0.0708
+  状态：done（已修复）。

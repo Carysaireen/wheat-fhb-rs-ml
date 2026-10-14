@@ -1,0 +1,16 @@
+{
+  "random_state": 42,
+  "n_splits": 5,
+  "classification": {
+    "method": "StratifiedKFold",
+    "shuffle": true,
+    "fold_file": "classification_folds.csv"
+  },
+  "regression": {
+    "method": "KFold",
+    "shuffle": true,
+    "fold_file": "regression_folds.csv",
+    "filtered_condition": "DI > 0"
+  },
+  "all_candidates_must_reuse_these_assignments": true
+}

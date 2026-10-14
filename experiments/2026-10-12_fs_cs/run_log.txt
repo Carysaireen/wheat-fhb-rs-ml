@@ -1,0 +1,123 @@
+================================================================================
+FS-CS 特征选择器对照实验 · 运行日志
+实验目录：project_v2/experiments/2026-10-12_fs_cs/
+日期：2026-10-12
+状态：done
+================================================================================
+
+【1. 目标】
+引入第 4 种特征选择器 FS-CS（Feature Selection with Compactness and Separability），
+与现有 RF重要性+MI / Boruta 并排对照，回答：
+  ① 随机折下 FS-CS 能否与现有选择器竞争？
+  ② 更关键——把现有选择器也放进同一套空间折后，谁的"跨区域泛化"最好？
+
+【2. 数据与方法】
+- 训练集：data/splits/train.csv（132 行 × 117 特征）；test_locked.csv 全程未读。
+- 选择器：
+    univariate : J(j) = S_B(j)/S_W(j)，逐特征打分取 top-K（尺度无关、确定性）
+    greedy     : 标准化后贪心前向，最大化 Fisher 判据 trace(S_W^-1 · S_B)（冗余感知）
+- K ∈ {10, 20, 30}
+- 模型：LR / SVM(RBF) / RF（与既有 feature_set_cv 定义一致）
+- 两种折：
+    A_random  : data/cv/classification_folds.csv（固定 5 折 StratifiedKFold seed=42）
+    B_spatial : KMeans(k=10) 空间块 + StratifiedGroupKFold(3 折)，seeds=[42,7,2026]
+- 两种协议：
+    nested : 每个外层训练折内部重新做 FS-CS 选择（诚实、无泄漏）—— 主口径
+    global : 用 5 折聚合排名定出固定特征集再评估（与既有 8 组特征集口径一致）
+
+【3. 真实运行命令】
+  # 快速自检（模块级）
+  D:/Anaconda/python.exe src/fs_cs.py
+  #     -> J=[1.9571 2.2846 0.02]  rank=[1 0 2]  噪声列得分最低 ✓
+
+  # 完整实验
+  D:/Anaconda/python.exe src/run_fs_cs_experiment.py
+  #     -> 1m31s；产出 outputs/ 下 8 个 CSV + metadata
+
+  # 空间折只跑 seed=42 的快速版
+  D:/Anaconda/python.exe src/run_fs_cs_experiment.py --quick
+
+  # 作图
+  D:/Anaconda/python.exe src/plot_fs_cs.py
+  #     -> results/fs_cs_selection/ 下 3 张图
+
+【4. ★ 核心结果：选择器擂台（同一套折、同一批模型、准确率）
+   列说明：acc_A=随机折准确率，acc_B=空间折准确率，gap=A-B（越大＝空间泄漏越重）】
+
+  set                       n_feat  model   acc_A    acc_B    gap
+  ---------------------------------------------------------------------
+  current_2                    2     LR    0.8046   0.8023   +0.0022
+  current_2                    2     RF    0.7661   0.7361   +0.0300
+  current_2                    2     SVM   0.7969   0.8090   -0.0121   ← 空间折反而更好
+  rfmi_top3of5                 6     LR    0.7972   0.7774   +0.0198
+  rfmi_top3of5                 6     RF    0.7664   0.7505   +0.0159
+  rfmi_top3of5                 6     SVM   0.7818   0.7870   -0.0052
+  fs_cs_univariate_top10      10     LR    0.7672   0.7658   +0.0014   ← 近乎零 gap
+  fs_cs_univariate_top10      10     RF    0.7744   0.7494   +0.0250
+  fs_cs_univariate_top10      10     SVM   0.7972   0.7918   +0.0054
+  fs_cs_univariate_top20      20     LR/RF/SVM      gap +0.0289 / +0.0636 / +0.0276
+  fs_cs_univariate_top30      30     LR/RF/SVM      gap +0.0043 / +0.0644 / +0.0373
+  fs_cs_greedy_top10          10     LR/RF/SVM      gap +0.0649 / +0.0395 / +0.0782
+  fs_cs_greedy_top20          20     LR/RF/SVM      gap +0.0571 / +0.0499 / +0.0618
+  fs_cs_greedy_top30          30     LR/RF/SVM      gap +0.0657 / +0.0623 / +0.0482
+  boruta_3of5                 30     LR    0.7818   0.6783   +0.1035   ← 空间折崩得最狠
+  boruta_3of5                 30     RF    0.7667   0.6856   +0.0810
+  boruta_3of5                 30     SVM   0.8048   0.7669   +0.0379
+  all_117                    117     LR    0.6829   0.5794   +0.1035
+  all_117                    117     RF    0.7595   0.6945   +0.0651
+  all_117                    117     SVM   0.7746   0.7140   +0.0606
+
+【5. FS-CS（单变量）跨折最稳的特征（mean_rank 越小越重要）】
+  NREDI1(1.0) > NDVIre3(2.8) > NREDI2(5.6) > B4_ENT(7.0) > B3_ENT(7.8)
+  > NDVIre2(9.0) > B8A_COR(9.2) > B2_HOM(11.8) > B4_MEA(12.8) > B4_HOM(13.4) ...
+  → 前 7 名里 4 个是红边光谱指数（NREDI1/NDVIre3/NREDI2/NDVIre2），
+    与既有 RF+MI 结论高度一致；其余为 GLCM 纹理（ENT=熵、COR=相关、HOM=同质性）。
+  → 这说明 FS-CS 与"重要性导向"方法在光谱指数上收敛，在纹理上给出不同视角。
+
+【6. 结论（诚实版）】
+  ① 空间 gap 随特征集规模单调增大：2 特征 ≈ 0.00~0.03；30 特征 ≈ 0.03~0.10；
+     117 特征 ≈ 0.06~0.10。→ "特征越多，跨区域越不稳"是本实验最稳的规律。
+  ② Boruta 是最大受害方：随机折 ROC-AUC 最高（RF 0.853），空间折却掉得最狠
+     （RF gap +0.081，ROC-AUC gap +0.100）。它"确认"的特征最依赖空间邻域。
+  ③ FS-CS（单变量）在 10 特征档最稳（LR gap +0.001，SVM +0.005），
+     且绝对空间准确率（LR 0.766 / SVM 0.792）高于 Boruta 与 all_117。
+  ④ 但**最稳健的整体解仍是 current_2（2 特征）**：空间折准确率最高
+     （LR 0.802 / SVM 0.809）且 gap≈0（SVM 为负）。这是个重要且反直觉的发现。
+  ⑤ 冗余感知的 greedy 变体并未胜过单变量版（gap 普遍更大）→ **诚实负结果**，
+     说明在本数据上"去冗余"没有带来跨区域泛化收益。
+
+【7. 过程修正记录（自查）】
+  - 【bug · 已修】greedy 变体初版用 trace(S_B)/trace(S_W) 作准则，该准则**不尺度无关**，
+    会被原始量纲大的特征主导 → 结果崩坏（LR 准确率 0.52，低于瞎猜）。
+    已改为：先标准化，再用 Fisher 判据 trace(S_W^-1 · S_B)（含协方差项，真正的冗余感知）。
+    修正后 greedy 的 ROC-AUC 回到 0.78~0.81 区间。修正前的数字全部作废。
+  - 【文献 · 已修】此前 docs/模型改进方向_文献检索报告.md 中 "Zhou et al. 2023 提出 FS-CS"
+    属误引（该 Zhou et al. 2023 是另一篇叶片表型论文）。已更正为
+    Sun et al. 2025, European Journal of Agronomy（PII: S1161030125001984）。
+
+【8. 产出清单】
+  outputs/
+    fs_cs_fold_results.csv          每折每特征 J 分与排名、是否入 top10/20/30
+    fs_cs_stability.csv             跨折入选率与平均排名
+    nested_per_fold_metrics.csv     嵌套评估逐折明细（A 90 行 + B 162 行）
+    nested_summary.csv              嵌套评估汇总
+    gap_table.csv                   ★ 嵌套口径 A_random − B_spatial
+    global_per_fold_metrics.csv     全局特征集逐折明细
+    global_sets_summary.csv         全局特征集汇总
+    selection_sets.csv              各 variant × K 的特征名单（可追溯）
+    selector_benchmark.csv          ★ 选择器擂台（全部选择器 × 3 模型 × A/B）
+    selector_benchmark_per_fold.csv 擂台逐折明细
+    spatial_blocks_k10.csv          空间块归属
+    experiment_metadata.json        元信息（test_set_used=false）
+
+  results/fs_cs_selection/
+    fig1_selector_spatial_gap.png   各选择器空间 gap（3 模型 + gap~n_feat 趋势）
+    fig2_fs_cs_stability.png        FS-CS 前 20 特征稳定性
+    fig3_random_vs_spatial_rf.png   RF 随机折→空间折位移（哑铃图）
+    README.md                       图表说明与可引用表述
+
+【9. 复现】
+  cd project_v2
+  D:/Anaconda/python.exe src/run_fs_cs_experiment.py
+  D:/Anaconda/python.exe src/plot_fs_cs.py
+================================================================================

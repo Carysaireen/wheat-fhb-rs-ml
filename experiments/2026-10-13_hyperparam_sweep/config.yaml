@@ -1,0 +1,97 @@
+# 超参扫描实验 · 配置
+# 目的：回答阶段①②④ 留下的三个反常，是「超参没调」还是「模型本质不适合」？
+#       ① 分类 XGBoost 垫底（阶段① 跨选择器平均 0.762）
+#       ② 回归 PLSR 偏低且随 K 暴跌（K=5: 0.250 → K=30: 0.094）
+#       ③ 回归 SVR 垫底（0.194）
+# 状态：完成（2026-10-13 12:57，全量 59 s）
+
+experiment: hyperparam_sweep
+date: 2026-10-13
+status: done
+
+# --------------------------------------------------------------------------- #
+# 单变量协议：只有「模型超参」在变
+# --------------------------------------------------------------------------- #
+design:
+  selector: relieff          # 阶段①②④ 唯一在 4 个 K 档全部显著高于噪声下限的选择器
+  k: 10                      # 阶段② 的中间档
+  folds: 随机 5 折（data/cv/classification_folds.csv、regression_folds.csv）
+  seed: 42                   # 与阶段① 完全一致
+  scaling: 逐折 fit StandardScaler（仅训练折），所有超参配置共用同一份缩放后矩阵
+  selection_inside_fold: true # 特征选择只在训练折上做 → 无泄露
+  grid_size: {clf: 77, reg: 80}   # 每折的拟合次数
+  nested_selection: false    # 探索期不做嵌套 CV；用 LOFO 事后估计调优收益（见下）
+
+# --------------------------------------------------------------------------- #
+# 网格设计原则
+# --------------------------------------------------------------------------- #
+# 每个模型只扫「理论告诉我们最关键的那一个参数族」，网格刻意做小。
+# 盲搜/随机搜在 132 行的小样本上主要是拟合噪声，只会奖励运气好的配置（winner's curse）。
+# 每个网格的第 0 号配置 == 阶段① 的默认参数 → 扫描自带基线，
+# 「默认 vs 最优」是同一批折上的配对比较。
+grids:
+  clf:
+    LR:     C ∈ {1, 0.01, 0.1, 10, 100}                                  # 5
+    SVM:    C ∈ {1, 0.1, 10, 100} × gamma ∈ {scale, 0.01, 0.1}           # 12
+    SVMLin: C ∈ {1, 0.01, 0.1, 10, 100}                                  # 5
+    RF:     max_depth ∈ {None,3,5,10} × min_samples_leaf ∈ {1,3}         # 8
+    ET:     同 RF                                                         # 8
+    LDA:    (solver, shrinkage) ∈ {(lsqr,auto),(svd,None),(lsqr,.1/.5/.9)}# 5
+    PLSDA:  n_components ∈ {5,2,4,6,8,10}                                # 6
+    KNN:    n_neighbors ∈ {5,1,3,7,11,15} × weights ∈ {uniform,distance} # 12
+    NB:     var_smoothing ∈ {1e-9,1e-6,1e-3,1e-1}                        # 4
+    XGB:    learning_rate ∈ {0.05,0.3} × max_depth ∈ {3,2,6} × n_estimators ∈ {300,100}  # 12
+  reg:
+    Ridge:  alpha ∈ {1,0.01,0.1,10,100,1000}                             # 6
+    SVR:    C ∈ {1,10,100,1000} × epsilon ∈ {0.1,1,5}                    # 12  ← 关键：y 是 0–100 尺度的 DI
+    RF/ET:  同分类                                                        # 8/8
+    PLSR:   n_components ∈ {5,1,2,3,8,10}                                # 6
+    ENet:   alpha ∈ {0.1,0.01,1,10} × l1_ratio ∈ {0.5,0.2,0.8}           # 12
+    KNN:    同分类                                                        # 12
+    GPR:    alpha ∈ {1e-10,1e-6,1e-2,1.0}                                # 4
+    XGB:    同分类                                                        # 12
+
+# --------------------------------------------------------------------------- #
+# 评估口径：三种「分数」必须分清
+# --------------------------------------------------------------------------- #
+metrics:
+  default:      config_id==0 的表现（＝阶段① 的默认超参）
+  grid_best:    在全部 5 折上挑最高的配置 → ★ 有赢家诅咒，会高估
+  grid_mean:    全网格平均（≈ 随机挑一个配置的期望）
+  lofo_honest:  留一折（leave-one-fold-out）：用其余 4 折挑最优配置、在第 5 折上打分，
+                5 折平均 → 无偏估计「调优 4 折、部署到第 5 折」的真实收益
+  gap:          grid_best − lofo_honest = 「挑最优」这个动作本身的水分
+
+scripts:
+  grids:    src/hyperparam_grids.py
+  driver:   src/run_hyperparam_sweep.py     # --smoke / (full)
+  analysis: src/analyze_hyperparam_sweep.py
+
+outputs:
+  dir: experiments/2026-10-13_hyperparam_sweep/outputs
+  files:
+    - clf_per_fold_sweep.csv / clf_summary_sweep.csv    # 385 / 77 行
+    - reg_per_fold_sweep.csv / reg_summary_sweep.csv    # 400 / 80 行
+    - metadata_sweep.json
+    - run_progress_sweep.log                            # 带时间戳的实时进度
+  results: results/hyperparam_sweep/
+    - clf_tuning_table.csv / reg_tuning_table.csv
+    - fig1_param_curves_{clf,reg}.png                   # 每模型超参敏感度曲线
+    - fig2_tuning_gain_{clf,reg}.png                    # default / mean / LOFO / best 柱状
+    - recommended_params.json                           # LOFO 口径的推荐参数
+
+# --------------------------------------------------------------------------- #
+# 结论（详细见 results/hyperparam_sweep/README.md）
+# --------------------------------------------------------------------------- #
+findings:
+  - ★ SVR（回归）是唯一「超参大幅救活」的模型：0.260 → 0.492（LOFO 0.4916，折间 pick 稳定）。
+    C=100、epsilon=5 —— 默认 C=1/ε=0.1 对 0–100 尺度的 DI 严重欠拟合。修复后 SVR 从垫底冲到第 1。
+  - ★ XGB（分类）「垫底」是选择器平均造的假象：跨选择器平均 0.762，但固定 relieff 就是 0.8416
+    （Δ=+0.079，全场最大）→ XGB 是最「吃好选择器」的模型。超参只再贡献 +0.003。
+  - ★ PLSR（回归）本质不适合：最优 n_components=1 → 0.2967，仍低于 ET/RF/SVR。
+    它也解释了阶段② 的「随 K 暴跌」——n_components=5 相对太复杂。
+  - ★ ET（回归）默认无限深 → 过拟合；max_depth=5 + min_samples_leaf=3 带来 +0.092。
+  - ★ 分类轨调优几乎买不到东西：最大诚实增益 ET +0.006；多数模型 LOFO 增益 ≈0 或为负。
+  - ★ 折间 pick 普遍不稳定：10 个分类模型里只有 2 个（ET/NB）在 5 折上都选同一个配置
+    → 「最佳超参」大多由噪声决定。
+  - 诚实边界：单 seed、单 K、只随机折、未做多重比较校正；LOFO 只是事后估计，不是嵌套 CV。

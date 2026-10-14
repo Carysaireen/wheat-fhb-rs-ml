@@ -1,0 +1,255 @@
+阶段⑤ · 调优参数下的「选择器 × 模型」全矩阵 —— 逐条挑战 current_2
+==============================================================================
+实验目录 : experiments/2026-10-13_stage5_tuned/
+驱动脚本 : src/run_stage5_tuned_matrix.py
+自校验   : src/selfcheck_stage5.py
+分析脚本 : src/analyze_stage5_challenge.py
+结果目录 : results/stage5_tuned/
+运行耗时 : 1363 s（单进程）
+封存测试 : 未读（test_set_used = false）
+
+------------------------------------------------------------------------------
+[0] 实验目标
+------------------------------------------------------------------------------
+用户在阶段②发现 XGB（分类）与 PLSR（回归）全场垫底，质疑「是不是因为没调参」。
+阶段③ 已证明调参能翻转结论（SVR 0.2604 -> 0.4916，从第9到第1）。
+本实验把 10 个分类模型 / 9 个回归模型的「在 current_2 上调优后的参数」全部装上，
+重跑整个「选择器 × K」矩阵，逐条挑战擂主 current_2。
+
+------------------------------------------------------------------------------
+[1] 单一变量控制（与阶段②/④ 的唯一差异 = 模型超参来源）
+------------------------------------------------------------------------------
+不变项：
+  - 数据源        data/raw/Wheat_Scab_Features_Extraction_Ordered_region.csv (GBK)
+  - 训练集        train.csv 132 行 (random_state=42)
+  - 随机折        分类 StratifiedKFold(5, seed=42) / 回归 KFold(5, seed=42)
+  - 空间折        KMeans(k=10) + 3 折，种子 42/7/2026（逐字复刻阶段④）
+  - 选择器        直接 import selector_zoo.py（分类 11 / 回归 10）
+  - K 网格        (5, 10, 20, 30)
+  - 打分函数      直接 import clf_scores / reg_scores
+唯一变化项：
+  - 模型超参      阶段②/④ = 出厂默认；阶段⑤ = champion_best_params.json（在 current_2 上调优）
+
+模型包装方式逐字对齐（★ 关键）：
+  PIPELINE_MODELS = {
+      "clf": {"LR","SVM","SVMLin","LDA","PLSDA","KNN","NB"},
+      "reg": {"Ridge","SVR","PLSR","ENet","KNN","GPR"},
+  }
+  上述模型包 Pipeline([("sc", StandardScaler()), ("m", inner)])；
+  RF / ET / XGB 为裸估计器。若漏掉包装 = 偷偷删掉标准化 = 破坏单一变量控制。
+
+调优参数使用方式（诚实声明）：
+  调优参数在 current_2（2 个特征）上选出，一路沿用到所有 K 与所有选择器。
+  不是「每 (选择器, 模型, K) 各自调参」—— 有意为之，测的是保守下界。
+
+------------------------------------------------------------------------------
+[2] ★ 自校验（证明「阶段⑤ − 阶段②」的差就是调参效应）
+------------------------------------------------------------------------------
+command: D:/Anaconda/python.exe src/selfcheck_stage5.py
+逻辑    : 把调优参数换回出厂默认（取超参网格第 0 项），用阶段⑤ 自己的循环重跑
+          k=10 切片，与阶段② 正式输出逐行逐位比对。
+
+=== 自校验过程中抓出的两个真实缺陷 ===
+
+缺陷 A：阶段⑤ 循环喂原始特征，阶段② 模型内部自带 StandardScaler
+  症状  : clf max|delta| = 9.167e-01（0.9 差距，非浮点误差）
+  修复  : 按 PIPELINE_MODELS 把 7 个分类 / 6 个回归模型包回 Pipeline
+  结果  : reg 降到 3.553e-15 (PASS)；clf 降到 5.952e-03（仍有残留）
+
+缺陷 B：src/hyperparam_grids.py 的 build_clf 用 probability=False
+  症状  : 仅 5/550 行不一致，仅 roc_auc，仅 SVM/SVMLin
+  根因  : clf_scores 的 roc_auc 优先用 predict_proba；probability=False 时退化为
+          decision_function，两条路径排序不同 -> AUC 差 6e-3
+  事实  : 全项目其余 7 个脚本都用 probability=True，只有超参网格这个文件不是
+          （历史遗留不一致，非本实验引入）
+  修复  : build_clf 的 SVM / SVMLin 加 probability=True
+  影响  : 只影响 roc_auc，不影响 accuracy -> 擂主档案判定无需重跑
+
+=== 修复后自校验输出 ===
+[clf] rows mine=550 gold(k=10)=550 common=550 | max|delta| = 1.110e-16 (PASS)
+[reg] rows mine=440 gold(k=10)=440 common=440 | max|delta| = 3.553e-15 (PASS)
+RESULT: PASS -- stage5 loop is faithful to stage2
+
+------------------------------------------------------------------------------
+[3] 冒烟运行
+------------------------------------------------------------------------------
+command: D:/Anaconda/python.exe src/run_stage5_tuned_matrix.py --smoke
+产物    : outputs/*_smoke.csv / metadata_smoke.json / run_progress_stage5_smoke.log
+耗时    : 约 49 s（clf + reg）
+
+------------------------------------------------------------------------------
+[4] 正式全量运行
+------------------------------------------------------------------------------
+command: D:/Anaconda/python.exe src/run_stage5_tuned_matrix.py --seed 42
+输出头部: [22:43:09] START mode=full k=[5, 10, 20, 30] seeds=[42]
+          | clf_sel=11 reg_sel=10 | clf_m=10 reg_m=9
+折构造（共 28 折）:
+  clf: A_random fold#1-5 (n_train 105/105/106/106/106)
+       B_spatial_s42   fold#6-8 (79/100/85)
+       B_spatial_s7    fold#9-11 (90/98/76)
+       B_spatial_s2026 fold#12-14 (92/85/87)
+  reg: A_random fold#1-5 (92/93/93/93/93)
+       B_spatial_s42   fold#6-8 (85/81/66)
+       B_spatial_s7    fold#9-11 (65/92/75)
+       B_spatial_s2026 fold#12-14 (94/72/66)
+输出尾部: [23:05:46] [done] full -> experiments/2026-10-13_stage5_tuned/outputs
+          | total 1363s
+产出    : clf_per_fold_full.csv / clf_summary_full.csv / metadata_full.json
+          reg_per_fold_full.csv / reg_summary_full.csv
+
+矩阵规模（summary 行数）:
+  clf = 1760 行（11 选择器 × 10 模型 × K=[5,10,20,30]）
+  reg = 1440 行（10 选择器 ×  9 模型 × K=[5,10,20,30]）
+
+------------------------------------------------------------------------------
+[5] ★ 判定规则修复：challenge_rules.py 的 MDD 门槛语义
+------------------------------------------------------------------------------
+错误写法（修复前）:
+  mdd = max(champ.mdd, 2*sqrt(2)*challenger_std/sqrt(n_folds))
+  后果 : 「翻车越狠反而越安全」—— 挑战者在不同分区种子上忽高忽低（std 大）会把门槛
+         抬得极高，即便平均分巨亏也被判 TIE。
+  实例 : 回归 perm+Ridge@K30 空间折 R2 = -2.1764，跨种子 std = 1.2108，门槛被抬到 2.83
+         -> 亏了 2.3 分的灾难性结果被判成 TIE。
+
+正确写法（修复后）:
+  mdd = champ.mdd                # ★ 门槛只由擂主决定
+  delta = challenger_mean - champ.mean
+  WIN if delta > mdd ; LOSE if delta < -mdd ; else TIE
+  挑战者 std 仅作诊断披露（challenger_std 列），不参与判定。
+
+修复前后判定对比:
+  轨道   版本      WIN   TIE   LOSE
+  clf    修复前      0   331    109
+  clf    修复后      0   132    308
+  reg    修复前      0   218    142
+  reg    修复后      0     0    360
+
+合理性检查：修复后「平手」数量大幅下降（331->132、218->0），
+符合直觉 —— 平手应是「真的差不多」，而非「因为自己太乱所以不算输」。
+
+历史结论未被破坏（已实测验证，非声明）:
+  D:/Anaconda/python.exe src/selfcheck_champion.py
+  -> RESULT: PASS -- champion profile is reproducible (clf 0.000e+00 / reg 4.441e-16)
+  D:/Anaconda/python.exe src/analyze_challenge.py
+  -> clf: 赢 0 / 平 9 / 输 63 ; reg: 赢 0 / 平 0 / 输 95   （与修复前逐位一致）
+
+------------------------------------------------------------------------------
+[6] 判定结果
+------------------------------------------------------------------------------
+command: D:/Anaconda/python.exe src/analyze_stage5_challenge.py
+
+--- 擂主 ---
+[擂主|clf] current_2 + SVMLin | 空间折 roc_auc = 0.7961 | std_seed = 0.0000 | MDD = 0.0312
+[擂主|reg] current_2 + XGB    | 空间折 r2      = 0.1215 | std_seed = 0.0294 | MDD = 0.0480
+
+⚠️ 换个指标就换个擂主（current_2 内部，空间折）:
+  clf accuracy 冠军 = NB    0.8141  （roc_auc 0.7908）
+  clf roc_auc  冠军 = SVMLin 0.7961 （accuracy 0.8114）
+  reg r2       冠军 = XGB    0.1215 （ET 0.0357 次之；其余 6 个模型全负）
+
+--- 擂台结果 ---
+[挑战|clf] 共 440 个挑战者 -> WIN=0 / TIE=132 / LOSE=308
+  Δ(min/max/mean) = -0.2920 / +0.0240 / -0.0680
+  按 K 判定分布: K5 76输34平 | K10 78输32平 | K20 78输32平 | K30 76输34平
+  空间折 >= 0.80 的挑战者: 17 个（最高 0.8200）
+  空间折 vs 随机折 Pearson r = 0.6869
+
+  每 K 榜首（按空间折）:
+   K  selector  model   spatial  random  delta  verdict
+   5  lasso     SVM     0.8130   0.7931  0.0170  TIE
+  10  rfe_svm   NB      0.8200   0.8164  0.0240  TIE
+  20  enet      NB      0.8149   0.7951  0.0188  TIE
+  30  spa       NB      0.8045   0.7866  0.0084  TIE
+
+  最强 10 个挑战者（按 Δ 降序，全部 TIE）: 见 _analysis_stdout.txt 第 56-67 行
+
+[挑战|reg] 共 360 个挑战者 -> WIN=0 / TIE=0 / LOSE=360
+  Δ(min/max/mean) = -2.2978 / -0.1577 / -0.6151（全负）
+  空间折 > 0 的挑战者: 0 / 360（最好 -0.0362）
+  空间折 vs 随机折 Pearson r = 0.6388
+
+  每 K 榜首（按空间折）:
+   K  selector  model   spatial  random  delta  verdict
+   5  spa       ET     -0.1451   0.2647 -0.2665  LOSE
+  10  lasso     KNN    -0.1107   0.3828 -0.2321  LOSE
+  20  lasso     KNN    -0.0825   0.3470 -0.2039  LOSE
+  30  lasso     KNN    -0.0362   0.4263 -0.1577  LOSE
+  -> 榜首 R2 随 K 单调向 0 靠拢（-0.1451 -> -0.0362），但始终为负
+
+--- 调参效应（阶段⑤调优 − 阶段②/④默认，严格配对）---
+[clf] 空间折 n=440  mean Δ = +0.0063  为正 60.9%
+[clf] 随机折 n=440  mean Δ = +0.0035  为正 55.0%
+  按模型(空间折): PLSDA +0.0511 | SVMLin +0.0433 | XGB +0.0416 | ET +0.0302 | KNN +0.0167
+                 | RF +0.0156 | NB 0.0000 | SVM -0.0101 | LR -0.0463 | LDA -0.0795
+  按 K: {5: 0.011, 10: 0.0073, 20: 0.0037, 30: 0.0031}  -> K 越小收益越大
+
+[reg] 空间折 n=360  mean Δ = +0.1683  为正 81.1%
+[reg] 随机折 n=360  mean Δ = +0.0333  为正 58.6%
+  按模型(空间折): PLSR +0.4043 | KNN +0.2992 | Ridge +0.2376 | SVR +0.1927 | ENet +0.1203
+                 | ET +0.0994 | GPR +0.0656 | XGB +0.0517 | RF +0.0441
+  按 K: {5: 0.1436, 10: 0.202, 20: 0.1449, 30: 0.1828}
+  注: KNN 的 min Δ = +0.0591（全为正，调参在所有 360 格点上都不变差）
+
+--- 多重比较警告 ---
+本次共比较 440 次（clf）；不校正时纯靠运气至少撞出一个"显著"的概率约 1.000；
+Bonferroni 参考门槛 alpha' = 1.14e-04。
+本次共比较 360 次（reg）；不校正时纯靠运气至少撞出一个"显著"的概率约 1.000；
+Bonferroni 参考门槛 alpha' = 1.39e-04。
+
+------------------------------------------------------------------------------
+[7] 结论
+------------------------------------------------------------------------------
+1. 调参救不了。
+   分类 440 个挑战者 0 胜（17 个分数翻过擂主，但幅度 < MDD=0.0312 -> 只能算平手）。
+   回归 360 个挑战者 0 胜 / 0 平，且空间折 R2 全为负（最好 -0.0362）。
+   -> 「打不过 current_2」不是调参不够，是数据/口径本身的问题。
+
+2. 调参收益通道不对称。
+   分类空间折平均 +0.0063（买得极少），回归空间折平均 +0.1683（买得极多）。
+   根因: SVR/PLSR 一类模型对目标尺度极度敏感（DI 是 0-100 原始尺度，
+   默认超参按标准化目标设计 -> 系统性欠拟合）。
+   附带: LDA/LR 调参反而变差（-0.0795/-0.0463）—— 线性模型可调空间小，
+   且"挑超参"本身带 winner's curse。NB 的 Δ 恒为 0（本来就没有超参可调），
+   解释了它为何「不调参就能在 accuracy 上夺冠」。
+
+3. 回归轨的 K 效应再次确认（第五处独立证据）。
+   榜首 R2 随 K 单调向 0 靠拢（-0.1451 -> -0.0362）但始终为负。
+   特征集规模是跨区域不稳定的第一大通道。
+
+------------------------------------------------------------------------------
+[8] 诚实边界
+------------------------------------------------------------------------------
+- 空间折仅用分区种子 42（配对需要与阶段④ 严格对齐）-> 判定是方向性的。
+- 单模型种子；未做调参种子重复。
+- 调优参数来自 current_2，非每组合各自调优 -> 测的是保守下界。
+- 未做多重比较校正 / 未做显著性检验。
+- 判定规则为项目自定义；MDD 中 1/n_valid_min 项是经验下限。
+- 空间折 R2 为负可能偏悲观（Roberts et al. 2017）-> 真值在随机折与空间折之间。
+- test_locked.csv 未读（按纪律只在确认阶段评一次）。
+
+------------------------------------------------------------------------------
+[9] 产出清单
+------------------------------------------------------------------------------
+results/stage5_tuned/
+  README.md                    主报告（十二节）
+  challenge_clf.csv            分类 440 行判定表
+  challenge_reg.csv            回归 360 行判定表
+  tuning_effect_clf.csv        分类调参效应 440 行
+  tuning_effect_reg.csv        回归调参效应 360 行
+  leaderboard_clf.csv / leaderboard_reg.csv      每 K 榜首
+  fig_verdict_stage5_{clf,reg}.png               判定分布
+  fig_tuning_effect_{clf,reg}.png                调参效应
+  fig_nfeat_stage5_{clf,reg}.png                 空间折得分 vs 特征数
+  _analysis_stdout.txt                           分析脚本完整 stdout（数字来源）
+
+experiments/2026-10-13_stage5_tuned/
+  config.yaml
+  outputs/{clf,reg}_per_fold_full.csv
+  outputs/{clf,reg}_summary_full.csv
+  outputs/metadata_full.json
+  outputs/run_progress_stage5_full.log
+  outputs/stage5_full_stdout.log
+
+==============================================================================
+[log written 2026-10-13]
+==============================================================================

@@ -1,0 +1,119 @@
+# ============================================================
+# 实验配置 — 空间分组交叉验证对照
+# 目的：量化「普通 5 折」与「空间分组 3 折」的性能差距，
+#       估计现有数字中因样本空间共址（最近邻中位数≈45 m）带来的乐观水分。
+# 说明：路径均以 project_v2 为工作目录（脚本从此处运行）。
+# 修订：2026-10-11 由 5 折改为 3 折（依据见下 design_rationale）。
+# ============================================================
+
+experiment:
+  id: 2026-10-11_spatial_cv
+  status: planned              # planned | running | done
+  created: 2026-10-11
+  revised: 2026-10-11          # 空间分组折数 5 -> 3
+
+# ---------- 数据 ----------
+data:
+  raw: ../data/raw/Wheat_Scab_Features_Extraction_Ordered_region.csv   # 项目根共享数据源
+  encoding: gbk
+  meta_cols: 9                 # 前 9 列为元信息
+  n_features: 117              # 第 10 列起
+  n_rows: 165
+  train: data/splits/train.csv # 132 样本，内层 CV 在此进行
+  target_class: "Unnamed: 2"   # 0=健康 / 1=患病
+  target_reg: DI               # 严重度 0-100
+  regression_subset: "DI > 0"  # 回归仅用患病样本（现状口径）
+
+# ---------- 空间分组（分组变量只能由经纬度导出，禁用 O_Name）----------
+spatial_grouping:
+  coords: [O_Lat, O_Lng]
+  methods:
+    - name: kmeans
+      n_clusters: [8, 10, 12]        # 主口径 k=10，k=8/12 作敏感性分析
+      primary: 10
+    - name: dbscan                   # 备选：基于密度的聚类
+      eps_deg: [0.001, 0.005, 0.01]  # 约 110 m / 550 m / 1.1 km
+      min_samples: 2
+  primary: kmeans_k10                # 主对照口径
+
+# ---------- 交叉验证 ----------
+cv:
+  # A：现状（按行随机分层），直接复用封存折文件
+  scheme_a:
+    name: random_stratified
+    n_splits: 5
+    file: data/cv/classification_folds.csv
+  # B：空间分组（整块留出），每次现场生成
+  scheme_b:
+    name: spatial_group
+    n_splits: 3                      # ★ 由 5 改 3（依据见 design_rationale）
+    splitter: StratifiedGroupKFold
+  seeds: [42, 7, 2026]               # 多 seed 重复，报 均值 ± std
+  regression_fold: "KFold(5) -> 待改进为按 DI 分箱分层；本实验沿用现状以保证可比"
+
+# ---------- ★ 文献依据：为何折数由 5 改为 3 ----------
+design_rationale:
+  why_3_folds:
+    - "预演实测（2026-10-11）：k=10 空间块 + 5 折时，切出仅含 2 个样本的验证折，无法评估。"
+    - "Roberts et al. 2017 (Ecography 40:913-929)：空间 CV 应尽量让每折只含少量块，"
+    - "  以最大化训练集、降低 CV 内在偏差。"
+    - "Wenger & Olden (2012)，经 arXiv:2310.15108 转述：观测空间小、无法设置足够大缓冲带时，"
+    - "  应把空间 CV 折数保持较小，以获得更保守（更贴近真实）的误差估计。"
+    - "arXiv:2502.3480 实例：折数依数据密度而定（稀疏数据用 3 折）。"
+    - "本项目观测空间仅 0.68 度（约 70 km），属「观测空间小」，故采用 3 折。"
+  sensitivity_k:
+    - "k=8 / 10 / 12 各跑一遍，检验结论对块数的稳健性。"
+    - "k=10 + 3 折：验证折 53/32/47，标签 [0:23,1:30]/[0:19,1:13]/[0:30,1:17]（主口径）"
+    - "k=12 + 3 折：39/53/40，标签更均衡（备选）"
+    - "k=8  + 3 折：14/80/38（fold0 偏小，仅作参考）"
+  no_buffer:
+    reason: "★ 本实验不设 buffer（缓冲带）。"
+    detail:
+      - "文献（Roberts 2017；sky-mineral 综述）建议在留出块周围排除一圈训练样本，"
+      - "  以进一步降低空间自相关。但 buffer 会进一步缩小本就只有 132 的训练集，"
+      - "  且本项目观测空间极小（0.68 度），加 buffer 可能导致训练集过小、外推加剧。"
+      - "  故当前阶段不设 buffer；buffer 作为后续敏感性分析的可选项。"
+  why_report_both:
+    - "随机 CV 可能高估性能（空间泄漏）；空间分组 CV 可能低估（外推）。真相介于两者之间。"
+    - "Roberts 2017 明确警告分块可能引发外推、高估误差。"
+    - "故必须两者并报，差值本身即为「空间泄漏程度」的诊断信息。"
+    - "领域实证：Morellos et al. 2025 (Comput. Electron. Agric. 231:109967) 同域对照——"
+    - "  跨田块验证 R²最高 0.71 vs 田块内建模 R²最高 1.00，证明空间泄漏量级巨大。"
+  references:
+    - "Roberts et al. 2017, Ecography 40(8):913-929, DOI 10.1111/ecog.02881"
+    - "Morellos et al. 2025, Comput. Electron. Agric. 231:109967, DOI 10.1016/j.compag.2025.109967"
+    - "arXiv:2310.15108 (spatial CV overview)"
+    - "arXiv:2502.3480 (unbiased spatio-temporal CV)"
+
+# ---------- 预处理（铁律：只在训练折 fit）----------
+preprocessing:
+  imputer: median
+  iqr_clip: [false, true]      # 两套方案对照
+  scaler: standard
+  fit_scope: train_fold_only   # 通过 sklearn Pipeline 保证
+
+# ---------- 模型 ----------
+models:
+  classification: [LogisticRegression, SVC_rbf, RandomForest]
+  regression: [Ridge, SVR, RandomForest]
+
+# ---------- 指标 ----------
+metrics:
+  classification: [accuracy, f1, recall, roc_auc]
+  regression: [r2, rmse, mae]
+
+# ---------- 产出 ----------
+outputs:
+  dir: outputs/
+  naming: "所有文件带 k 后缀（如 gap_table_k10.csv）；主口径 = k10"   # ★ 2026-10-12 修复覆盖 bug
+  expected:
+    - per_fold_metrics_k{k}.csv     # 每折每模型明细
+    - summary_metrics_k{k}.csv      # 汇总（含 scheme A/B 标签）
+    - gap_table_k{k}.csv            # ★ 核心结论：A_random 与 B_spatial 的差值
+    - fold_design_k{k}.csv          # 空间折设计审计（每折样本数、标签构成、含块数）
+    - spatial_blocks_k{k}.csv       # 每个样本的块归属（可追溯）
+
+# ---------- 测试集纪律 ----------
+test_set:
+  policy: locked               # 本实验只用训练集 + 内部 CV，不读取封存测试集
+  note: "test_locked.csv 33 样本全程封存，仅方案冻结后一次性评估。"
